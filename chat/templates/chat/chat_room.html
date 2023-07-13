@@ -34,13 +34,13 @@
       <div class="row" id="chatBox">
           <!-- Beginning of chat history -->
           <div class="col-2"></div>
-          <div class="col-8 text-center"><a class="badge text-secondary-emphasis bg-secondary-subtle gray-900">This is beginning of the chat history</a></div>
+          <div class="col-8 text-center"><a class="badge text-secondary-emphasis bg-secondary-subtle gray-900">چت شما شروع شد.</a></div>
           <div class="col-2"></div>
           <!-- Beginning of chat messages -->
           {% for message in chat_messages %}
-            <div class="col-4 d-{% if message.sender.username == current_user %}block{%else%}none{% endif %}"></div>
+            <div class="col-4 d-{% if message.sender.username == current_user %}none{%else%}block{% endif %}"></div>
             <div class="col-8">
-                <div class="message mb-3 {% if message.sender.username == current_user %}self float-end{% endif %}">
+                <div class="message mb-3 {% if message.sender.username == current_user %}self float-end {% else %} float-start {% endif %}">
                     <div class="message-content">
                       <small style="font-size: 13px;">{{ message.sender.username }}</small>
                       <p class="mb-1">{{ message.message }}</p>
@@ -48,19 +48,19 @@
                     </div>
                 </div>
             </div>
-            <div class="col-4 d-{% if message.sender.username == current_user %}none{%else%}block{% endif %}"></div>
+            <div class="col-4 d-{% if message.sender.username == current_user %}block float-start{%else%}none{% endif %}"></div>
           {% endfor %}
       </div>
     </div>
     <div class="card-footer">
       <div class="input-group input-group-sm">
-        <input type="text" class="form-control" id="messageInput" placeholder="Type your message..." />
         <div class="input-group-append">
           <button type="button" id="sendButton" class="btn btn-primary">
             <i class="fa fa-paper-plane fa-fw"></i>
-            <span class="d-none d-sm-inline"> Send</span>
+            <span class="d-none d-sm-inline">ارسال</span>
           </button>
         </div>
+        <input type="text" dir="ltr" class="form-control" id="messageInput" placeholder="... پیام خود را اینجا بنویسید" />
       </div>
     </div>
   </div>
@@ -80,9 +80,9 @@
       const message = JSON.parse(e.data);
       console.log(message)
       document.getElementById("chatBox").innerHTML += `
-        <div class="col-4 d-${message.username == user_username ? 'block' : 'none'}"></div>
+        <div class="col-4 d-${message.username == user_username ? 'none' : 'block'}"></div>
           <div class="col-8">
-              <div class="message mb-3 ${message.username == user_username ? 'self float-end' : ''}">
+              <div class="message mb-3 ${message.username == user_username ? 'self float-end' : 'float-start'}">
                   <div class="message-content">
                     <small style="font-size: 13px;">${message.username}</small>
                     <p class="mb-1">${message.message}</p>
@@ -90,7 +90,7 @@
                   </div>
               </div>
           </div>
-        <div class="col-4 d-${message.username == user_username ? 'none' : 'block'}"></div>
+        <div class="col-4 d-${message.username == user_username ? 'block' : 'none'}"></div>
       `
     }
 

@@ -55,7 +55,6 @@ THIRD_PARTY_APPS = [
     'admin_interface',
     'colorfield',
     'widget_tweaks', 
-    'crispy_forms',
 
     # add this apps for login via google, github and ...
     'social_django',    
@@ -202,7 +201,6 @@ MESSAGE_TAGS = {
 # LOGIN_URL = reverse_lazy('accounts:login')
 LOGOUT_REDIRECT_URL = '/'
 
-CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
 # ckeditor
 CKEDITOR_UPLOAD_PATH = "ckeditor/uploads/"

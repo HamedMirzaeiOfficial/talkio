@@ -1,9 +1,9 @@
 {% extends './base.html' %}
-
 {% block content %}
-    <h3>Welcome, {{ user.username }}!</h3>
+    <h3>{{ user.username }} خوش آمدید!!!</h3>
 
-    <h5>Chat Rooms available</h5>
+    <hr>
+    <h5 class="p-4">لیست چت روم ها</h5>
 
     <div class="d-flex flex-column">
       <div class="border border-20 p-3" style="overflow-y: scroll;height: 45vh;">
@@ -13,12 +13,19 @@
           <div class="card-body">
             <div class="row">
               <div class="col-9">
-                <h5 class="card-title">{{ room.room_name }}</h5>
-                <p class="card-text">{{ room.last_message.message }}</p>
-                <small>{{ room.last_message.sender }} {{ room.last_message.timestamp }}</small>
+                <h5 class="card-title">نام:‌ {{ room.room_name }}</h5>
+                <div style="background-color: aliceblue;" class="p-3">
+                  {% if room.last_message.message %}
+                    <p class="card-text">{{ room.last_message.sender }} ==> {{ room.last_message.message }}</p>
+                    <small>{{ room.last_message.timestamp }}</small>
+                  {% else %}
+                      پیامی برای نمایش وجود ندارد.
+                  {% endif %}
+                
+                </div>
               </div>
               <div class="col-3 text-center my-auto">
-                <a href="{% url 'chat:room' room.room_name %}" class="btn btn-primary align-middle">Enter Chat</a>
+                <a href="{% url 'chat:room' room.room_name %}" class="btn btn-primary align-middle">ورود به چت</a>
               </div>
             </div>
           </div>
@@ -30,8 +37,10 @@
     <form action="" method="post">
       {% csrf_token %}
       {{ form }}
-      <input type="submit" name="" id="" value="dw">
+      <input class="btn btn-primary btn-sm col-12 mt-1" type="submit" name="" id="" value="ایجاد">
     </form>
+
+    <div class="m-5"></div>
 
   
 {% endblock %}

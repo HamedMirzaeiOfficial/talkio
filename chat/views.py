@@ -52,7 +52,6 @@ class CreateChatRoomView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         chat_rooms = get_chat_rooms_with_last_message()
         form = self.form_class()
-        print(chat_rooms)
         return render(request, self.template_name, {'form': form, 'chat_rooms': chat_rooms})
 
     
