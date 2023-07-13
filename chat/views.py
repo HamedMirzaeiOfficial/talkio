@@ -1,5 +1,10 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse_lazy
 from .models import ChatRoom, Message
+from django.views.generic import View
+from .forms import CreateChatRoomForm
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 
 def get_chat_rooms_with_last_message():
@@ -19,22 +24,12 @@ def get_chat_rooms_with_last_message():
             }
         })
 
-        return chat_rooms_with_last_message
+    return chat_rooms_with_last_message
 
-
-
-def index(request):
-    user = request.user
-    if not user.is_authenticated:
-        return redirect('accounts:login')
-    
-    chat_rooms = get_chat_rooms_with_last_message()
-
-    return render(request, 'chat/index.html', {'chat_rooms': chat_rooms})
 
 
 def room(request, room_name):
-    chat_room, created = ChatRoom.objects.get_or_create(name=room_name)
+    chat_room = get_object_or_404(ChatRoom, name=room_name)
     chat_messages = Message.objects.filter(chat_room=chat_room)
 
     context = {
@@ -45,3 +40,28 @@ def room(request, room_name):
 
 
     return render(request, 'chat/chat_room.html', context)
+
+
+
+
+class CreateChatRoomView(LoginRequiredMixin, View):
+    template_name = 'chat/index.html'
+    form_class = CreateChatRoomForm
+    
+
+    def get(self, request, *args, **kwargs):
+        chat_rooms = get_chat_rooms_with_last_message()
+        form = self.form_class()
+        print(chat_rooms)
+        return render(request, self.template_name, {'form': form, 'chat_rooms': chat_rooms})
+
+    
+    def post(self, request, *args, **kwargs):
+        chat_rooms = get_chat_rooms_with_last_message()
+        form = self.form_class(request.POST)
+        if form.is_valid():
+            room_name = form.cleaned_data['name']
+            chat_room, created = ChatRoom.objects.get_or_create(name=room_name)
+            return redirect('chat:room', room_name)
+        return render(request, self.template_name, {'form': form, 'chat_rooms': chat_rooms, 'room_name': room_name})
+

@@ -264,6 +264,8 @@ if not bool(DEBUG):
 # ------------------------- Async settings -------------------------
 # ------------------------------------------------------------
 
+WSGI_APPLICATION = "core.wsgi.application"
+
 ASGI_APPLICATION = "core.routing.application"
 
 CHANNEL_LAYERS = {
