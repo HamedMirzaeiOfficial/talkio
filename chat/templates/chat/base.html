@@ -25,8 +25,11 @@
 
     <nav class="navbar fixed-top bg-primary">
         <div class="container-fluid">
-            <a class="navbar-brand text-white" href="{% url 'chat:home' %}">گفتگو</a>
-            <a class="btn btn-warning" href="{% url 'accounts:logout' %}">خروج</a>
+            <a class="navbar-brand text-white btn btn-danger" href="{% url 'chat:home' %}">لیست گفتگو ها</a>
+            <span>
+                <a class="btn btn-warning" href="{% url 'accounts:profile' %}">پروفایل</a>
+                <a class="btn btn-warning" href="{% url 'accounts:logout' %}">خروج</a>
+            </span>
         </div>
     </nav>
 

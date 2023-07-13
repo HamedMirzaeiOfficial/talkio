@@ -23,9 +23,12 @@ class General(models.Model):
 
 class ChatRoom(General):
     name = models.CharField(max_length=100)
+    slug = models.SlugField(max_length=225, unique=True)
 
     def __str__(self):
         return self.name
+
+    
     
 
 class Message(General):

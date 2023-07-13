@@ -1,10 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
 from .models import ChatRoom, Message
-from django.views.generic import View
+from django.views.generic import View, UpdateView
 from .forms import CreateChatRoomForm
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from accounts.models import User
+
 
 
 def get_chat_rooms_with_last_message():
@@ -63,4 +65,5 @@ class CreateChatRoomView(LoginRequiredMixin, View):
             chat_room, created = ChatRoom.objects.get_or_create(name=room_name)
             return redirect('chat:room', room_name)
         return render(request, self.template_name, {'form': form, 'chat_rooms': chat_rooms, 'room_name': room_name})
+
 

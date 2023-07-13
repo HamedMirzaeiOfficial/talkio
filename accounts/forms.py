@@ -69,3 +69,25 @@ class LoginForm(forms.Form):
                 "title": ""
             }
         ))
+
+
+
+class ProfileForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user')
+        super(ProfileForm, self).__init__(*args, **kwargs)
+
+
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'first_name', 'last_name')
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control mt-5', 'placeholder': 'نام چت را وارد کنید...'}), 
+            'email': forms.EmailInput(attrs={'class': 'form-control mt-5', 'placeholder': 'نام چت را وارد کنید...'}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control mt-5', 'placeholder': 'نام چت را وارد کنید...'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control mt-5', 'placeholder': 'نام چت را وارد کنید...'})
+
+            
+        }
+     
+

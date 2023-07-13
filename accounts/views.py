@@ -2,7 +2,7 @@ from typing import Any, Optional
 from django.db import models
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login
-from .forms import LoginForm, SignUpForm
+from .forms import LoginForm, SignUpForm, ProfileForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from .models import VerificationCode, User
@@ -96,14 +96,6 @@ def signup_view(request):
     return render(request, template_name, context)
 
 
-
-class ProfileView(LoginRequiredMixin, generic.TemplateView):
-    template_name = 'accounts/profile.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["object"] = self.request.user
-        return context
 
 
 class ProfileUpdateView(LoginRequiredMixin, generic.UpdateView):
@@ -222,3 +214,21 @@ def phone_verification_check(request):
     
 class PhoneVerificationDoneView(LoginRequiredMixin, generic.TemplateView):
     template_name = 'accounts/phone_verification_done.html'
+
+
+
+class ProfileView(LoginRequiredMixin, generic.UpdateView):
+    model = User
+    form_class = ProfileForm
+    template_name = 'accounts/profile.html'
+    success_url = reverse_lazy('accounts:profile')
+
+    def get_object(self):
+        return User.objects.get(pk=self.request.user.pk) 
+
+    def get_form_kwargs(self):
+        kwargs = super(ProfileView, self).get_form_kwargs()
+        kwargs.update({
+            'user': self.request.user
+        })
+        return kwargs

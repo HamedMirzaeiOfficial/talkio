@@ -1,6 +1,6 @@
 from django import forms
 from .models import ChatRoom
-
+from accounts.models import User
 
 class CreateChatRoomForm(forms.ModelForm):
     class Meta:
@@ -13,3 +13,5 @@ class CreateChatRoomForm(forms.ModelForm):
         labels = {
             'name': ''
         }
+
+
