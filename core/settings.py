@@ -44,20 +44,46 @@ DEFAULT_APPS = [
 ]
 
 LOCAL_APPS = [
-    'authentication',
+    'accounts',
     'chat',
     'channels', 
-
-
 ]
 
 THIRD_PARTY_APPS = [
+    'daphne',
     'jalali_date',
     'admin_interface',
     'colorfield',
+    'widget_tweaks', 
+    'crispy_forms',
+
+    # add this apps for login via google, github and ...
+    'social_django',    
 ]
 
 INSTALLED_APPS = THIRD_PARTY_APPS + LOCAL_APPS + DEFAULT_APPS
+
+
+
+# ----------------- Social auth ------------------
+# ------------------------------------------------
+
+# add new authentication backend for using django all-auth package
+AUTHENTICATION_BACKENDS = [
+    'social_core.backends.google.GoogleOAuth2', # for google
+    'social_core.backends.github.GithubOAuth2', # for github
+    'django.contrib.auth.backends.ModelBackend' # for normal authentication
+]
+
+# key and secret for google
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.getenv('SOCIAL_AUTH_GOOGLE_OAUTH2_KEY', '')
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.getenv('SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET', '')
+
+# key and secret for github
+SOCIAL_AUTH_GITHUB_KEY = os.getenv('SOCIAL_AUTH_GITHUB_KEY', '')
+SOCIAL_AUTH_GITHUB_SECRET = os.getenv('SOCIAL_AUTH_GITHUB_SECRET', '')
+
+
 
 # ----------------- Middlewares ------------------
 # ------------------------------------------------
@@ -71,8 +97,10 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 
     # Admin Access 
-    # 'accounts.middlewares.AdminUserMiddleWare',
+    'accounts.middlewares.AdminUserMiddleWare',
     # /Admin Access
+
+    'social_django.middleware.SocialAuthExceptionMiddleware', #add this middleware for login via social accounts
 ]
 
 
@@ -90,25 +118,17 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                'social_django.context_processors.backends', #add this context processor for login via social accounts
             ],
         },
     },
 ]
 
 
-WSGI_APPLICATION = 'core.wsgi.application'
-
-# async settings  
-ASGI_APPLICATION = "core.routing.application"
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer',
-    },
-}
 
 # ------------------------- DATABASE -------------------------
 # ------------------------------------------------------------
-if os.getenv('DB_ENGINE', 'DB_ENGINE is not set.') == 'sqlite3' and os.getenv('DEBUG'):
+if DEBUG:
     DATABASES = {
         'default': {
                 'ENGINE': 'django.db.backends.sqlite3',
@@ -167,7 +187,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 # ------------------------------------------------------
 from django.contrib.messages import constants as messages
 
-# AUTH_USER_MODEL = 'accounts.User'
+AUTH_USER_MODEL = 'accounts.User'
 
 X_FRAME_OPTIONS = 'same-origin'
 
@@ -231,3 +251,23 @@ if not bool(DEBUG):
     # SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     # SECURE_HSTS_PRELOAD = True
     # SECURE_CONTENT_TYPE_NOSNIFF = True
+
+
+
+
+
+
+
+
+
+
+# ------------------------- Async settings -------------------------
+# ------------------------------------------------------------
+
+ASGI_APPLICATION = "core.routing.application"
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}

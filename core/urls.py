@@ -9,15 +9,11 @@ from django.views.generic import RedirectView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('auth/', include('authentication.urls')),
+    path('accounts/', include('accounts.urls', namespace='accounts')),
     path('chat/', include('chat.urls')),
+    path('social-auth/', include('social_django.urls', namespace='social')),
     path('', RedirectView.as_view(url='/chat/')),
 
-
-    
-    # Accounts Urls 
-    # path('accounts/', include('accounts.urls', namespace='accounts')),
-        
 ]
 
 

@@ -32,7 +32,7 @@ class Message(General):
     chat_room = models.ForeignKey(ChatRoom, on_delete=models.CASCADE)
     sender = models.ForeignKey(User, on_delete=models.CASCADE)
     message = models.TextField()
-    timestamp = models.DataTimeField(auto_now_add=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
 
 
     def __str__(self):
