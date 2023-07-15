@@ -2,7 +2,8 @@ import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import sync_to_async
 from django.contrib.auth.models import User
-from .models import Message, ChatRoom
+from .models import Message, ChatRoom, UserStatus
+
 
 class ChatRoomConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -14,13 +15,22 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
             self.channel_name
         )
 
+        user_status, _ = await sync_to_async(UserStatus.objects.get_or_create)(user=self.scope['user'])
+        user_status.online = True
+        await sync_to_async(user_status.save)()
+
         await self.accept()
 
+
     async def disconnect(self, code):
+        user_status, _ = await sync_to_async(UserStatus.objects.get_or_create)(user=self.scope['user'])
+        user_status.online = False
+        await sync_to_async(user_status.save)()
         await self.channel_layer.group_discard(
             self.room_group_name,
             self.channel_name
         )
+
 
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)

@@ -21,14 +21,20 @@ class General(models.Model):
 # ----------------------- end General Models  -----------------------
 
 
+class UserStatus(User):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='status')
+    online = models.BooleanField(default=False)
+
+    def is_online(self):
+        return True if self.online else False
+
+
+
 class ChatRoom(General):
     name = models.CharField(max_length=100)
-    slug = models.SlugField(max_length=225, unique=True)
 
     def __str__(self):
         return self.name
-
-    
     
 
 class Message(General):
@@ -40,5 +46,8 @@ class Message(General):
 
     def __str__(self):
         return self.message
+
+    def add_seen_user(self, user):
+        self.seen_by.add(user)
 
     
