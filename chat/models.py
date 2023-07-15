@@ -32,6 +32,7 @@ class UserStatus(User):
 
 class ChatRoom(General):
     name = models.CharField(max_length=100)
+    users = models.ManyToManyField(User, related_name='chat_rooms')
 
     def __str__(self):
         return self.name
@@ -42,10 +43,8 @@ class Message(General):
     sender = models.ForeignKey(User, on_delete=models.CASCADE)
     message = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
-
+    seen_by = models.ManyToManyField(User, related_name='seen_messages', blank=True)
 
     def __str__(self):
         return self.message
-
-    
     
