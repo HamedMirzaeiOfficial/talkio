@@ -26,7 +26,7 @@ class UserStatus(User):
     online = models.BooleanField(default=False)
 
     def is_online(self):
-        return True if self.online else False
+        return self.online
 
 
 
@@ -47,7 +47,5 @@ class Message(General):
     def __str__(self):
         return self.message
 
-    def add_seen_user(self, user):
-        self.seen_by.add(user)
-
+    
     
