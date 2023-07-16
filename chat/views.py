@@ -19,6 +19,7 @@ def get_chat_rooms_with_last_message():
         chat_rooms_with_last_message.append({
             'id': room.id,
             'room_name': room.name,
+            'room_slug': room.slug,
             'last_message': {
                 'message': last_message.message if last_message else None,
                 'timestamp': last_message.timestamp if last_message else None,
@@ -30,12 +31,13 @@ def get_chat_rooms_with_last_message():
 
 
 
-def room(request, room_name):
-    chat_room = get_object_or_404(ChatRoom, name=room_name)
+def room(request, slug):
+    chat_room = get_object_or_404(ChatRoom, slug=slug)
     chat_messages = Message.objects.filter(chat_room=chat_room)
 
     context = {
-        'room_name': room_name,
+        'room_name': chat_room.name,
+        'room_slug': chat_room.slug, 
         'chat_messages': chat_messages,
         'current_user': request.user.username
     }
@@ -63,7 +65,7 @@ class CreateChatRoomView(LoginRequiredMixin, View):
         if form.is_valid():
             room_name = form.cleaned_data['name']
             chat_room, created = ChatRoom.objects.get_or_create(name=room_name)
-            return redirect('chat:room', room_name)
+            return redirect(chat_room.get_absolute_url())
         return render(request, self.template_name, {'form': form, 'chat_rooms': chat_rooms, 'room_name': room_name})
 
 

@@ -39,7 +39,7 @@
 {% endblock %}
 
 {% block content %}
-  <h3>Chat Room: {{ room_name }}</h3>
+  <h3>نام گروه: {{ room_name }}</h3>
 
   <div id="chatMessages" class="card mb-3" style="overflow-y: scroll;height: 75vh;">
     <div class="card-body" style="overflow-y: auto;">
@@ -92,8 +92,10 @@
 
   {{ request.user.username|json_script:"user_username" }}
   {{ room_name|json_script:"room-name" }}
+  {{ room_slug|json_script:"room-slug" }}
   <script>
     // Variables passed through template
+    const roomSlug = JSON.parse(document.getElementById('room-slug').textContent);
     const roomName = JSON.parse(document.getElementById('room-name').textContent);
     const user_username = JSON.parse(document.getElementById('user_username').textContent);
   
@@ -118,7 +120,7 @@
     let chatSocket = null;
   
     function connectSocket() {
-      chatSocket = new WebSocket(`ws://${window.location.host}/ws/chat/${roomName}/`);
+      chatSocket = new WebSocket(`ws://${window.location.host}/ws/chat/${roomSlug}/`);
   
       // Receive new messages and status updates from WebSocket
       chatSocket.onmessage = function (e) {

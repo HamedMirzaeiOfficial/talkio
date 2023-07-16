@@ -5,5 +5,5 @@ app_name = 'chat'
 
 urlpatterns = [
     path('', views.CreateChatRoomView.as_view(), name='home'),
-    path('<str:room_name>/', views.room, name='room'),
+    path('<str:slug>/', views.room, name='room'),
 ]

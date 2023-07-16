@@ -7,8 +7,8 @@ from .models import Message, ChatRoom, UserStatus
 
 class ChatRoomConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.room_name = self.scope['url_route']['kwargs']['room_name']
-        self.room_group_name = f'chat_{self.room_name}'
+        self.room_slug = self.scope['url_route']['kwargs']['room_slug']
+        self.room_group_name = f'chat_{self.room_slug}'
         self.sender = self.scope['user']
 
         # Update user status to online when connect happens.
@@ -18,7 +18,7 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
         
 
         # Add the sender to the seen_by field of all messages in the chat room
-        self.chat_room = await sync_to_async(ChatRoom.objects.get)(name=self.room_name)
+        self.chat_room = await sync_to_async(ChatRoom.objects.get)(slug=self.room_slug)
         messages = await sync_to_async(Message.objects.filter)(chat_room=self.chat_room)
         async for message in messages:
             await sync_to_async(message.seen_by.add)(self.sender)
@@ -56,7 +56,6 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
                 'username': self.sender.username,
                 'online': online.is_online() if online else False, 
                 'seen_by': seen_by_usernames, 
-                'message_id': message_obj.id  # Pass the message ID to identify the message
             }
         )
 
