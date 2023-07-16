@@ -17,7 +17,7 @@
                 <div style="background-color: aliceblue;" class="p-3">
                   {% if room.last_message.message %}
                     <p class="card-text">{{ room.last_message.sender }} ==> {{ room.last_message.message }}</p>
-                    <small>{{ room.last_message.timestamp }}</small>
+                    <small>{{ room.last_message.get_created_at }}</small>
                   {% else %}
                       پیامی برای نمایش وجود ندارد.
                   {% endif %}

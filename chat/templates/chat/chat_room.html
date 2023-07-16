@@ -65,7 +65,7 @@
                       </span>
 
                       <p class="mb-1">{{ message.message }}</p>
-                      <small style="font-size: 11px;">{{ message.timestamp }}</small>
+                      <small style="font-size: 11px;">{{ message.get_created_at }}</small>
                       <small style="font-size: 11px;">
                         بازدیدها: {% for user in message.seen_by.all %}
                         {{ user.username }}{% if not forloop.last %}, {% endif %}{% endfor %}
@@ -93,12 +93,16 @@
   {{ request.user.username|json_script:"user_username" }}
   {{ room_name|json_script:"room-name" }}
   {{ room_slug|json_script:"room-slug" }}
+  <script src="https://cdn.jsdelivr.net/npm/moment-jalaali@latest/dist/moment-jalaali.min.js"></script>
   <script>
+    
     // Variables passed through template
     const roomSlug = JSON.parse(document.getElementById('room-slug').textContent);
     const roomName = JSON.parse(document.getElementById('room-name').textContent);
     const user_username = JSON.parse(document.getElementById('user_username').textContent);
+    
   
+
     // Function to update online status dynamically
     function updateStatus(username, online) {
       const elements = document.getElementsByClassName(`user-${username}`);
@@ -125,7 +129,6 @@
       // Receive new messages and status updates from WebSocket
       chatSocket.onmessage = function (e) {
         const data = JSON.parse(e.data);
-        console.log(data);
   
         if (data.message) {
           // Received a new message
@@ -133,7 +136,10 @@
           const senderClass = data.username === user_username ? 'self' : 'float-start';
           const onlineStatus = data.online ? 'online' : 'offline';
           const statusText = data.online ? 'Online' : 'Offline';
-          const timestamp = new Date().toLocaleString();
+          const timestamp = new Date().toLocaleTimeString("fa-ir", {
+              hour: "numeric",
+              minute: "numeric",
+            });
   
           document.getElementById('chatBox').innerHTML += `
             <div class="col-4 d-${data.username === user_username ? 'none' : 'block'}"></div>
