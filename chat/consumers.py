@@ -9,19 +9,20 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.room_name = self.scope['url_route']['kwargs']['room_name']
         self.room_group_name = f'chat_{self.room_name}'
-        
+        self.sender = self.scope['user']
+
+        # Update user status to online when connect happens.
         user_status, _ = await sync_to_async(UserStatus.objects.get_or_create)(user=self.scope['user'])
         user_status.online = True
+        await sync_to_async(user_status.save)()
+        
 
-        self.chat_room = await sync_to_async(ChatRoom.objects.get)(name=self.room_name)
-        sender = self.scope['user']
         # Add the sender to the seen_by field of all messages in the chat room
+        self.chat_room = await sync_to_async(ChatRoom.objects.get)(name=self.room_name)
         messages = await sync_to_async(Message.objects.filter)(chat_room=self.chat_room)
         async for message in messages:
-            await sync_to_async(message.seen_by.add)(sender)
+            await sync_to_async(message.seen_by.add)(self.sender)
 
-
-        await sync_to_async(user_status.save)()
 
         await self.channel_layer.group_add(
             self.room_group_name,
@@ -35,18 +36,14 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
         message = text_data_json['message']
-        sender = self.scope['user']
+       
+        # Get user status
+        online = await sync_to_async(UserStatus.objects.get)(user=self.sender)
 
-        try:
-            online = await sync_to_async(UserStatus.objects.get)(user=sender)
-        except UserStatus.DoesNotExist:
-            online = None
-
-        self.chat_room = await sync_to_async(ChatRoom.objects.get)(name=self.room_name)
-
-        message_obj = await sync_to_async(Message.objects.create)(chat_room=self.chat_room, sender=sender, message=message)
+        # Create an object of message
+        message_obj = await sync_to_async(Message.objects.create)(chat_room=self.chat_room, sender=self.sender, message=message)
         
-        
+        # add user to list of seen by users and create a list of usernames
         seen_by_users = await sync_to_async(message_obj.seen_by.all)()
         seen_by_usernames = await sync_to_async(lambda: [user.username for user in seen_by_users])()
 
@@ -56,9 +53,10 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
             {
                 'type': 'chat_room_message',
                 'message': str(message),
-                'username': sender.username,
+                'username': self.sender.username,
                 'online': online.is_online() if online else False, 
-                'seen_by': seen_by_usernames
+                'seen_by': seen_by_usernames, 
+                'message_id': message_obj.id  # Pass the message ID to identify the message
             }
         )
 
@@ -75,6 +73,7 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
             'online': online, 
             'seen_by': seen_by
         }))
+        
 
     async def user_status(self, event):
         username = event['username']
@@ -87,15 +86,17 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
 
 
     async def disconnect(self, code):
-        user_status, _ = await sync_to_async(UserStatus.objects.get_or_create)(user=self.scope['user'])
+        # Get user status and change it to offline when disconnect happens  
+        user_status, _ = await sync_to_async(UserStatus.objects.get_or_create)(user=self.sender)
         user_status.online = False
         await sync_to_async(user_status.save)()
+
 
         await self.channel_layer.group_send(
             self.room_group_name,
             {
                 'type': 'user_status',
-                'username': self.scope['user'].username,
+                'username': self.sender.username,
                 'online': False
             }
         )

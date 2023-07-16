@@ -143,7 +143,7 @@
                       <p class="mb-1">${message}</p>
                       <small style="font-size: 11px;">${timestamp}</small>    
                       <small style="font-size: 11px;" id="seenBy-${data.message_id}">
-                        Seen by: ${data.seen_by.join(', ')}
+                        بازدیدها: ${data.seen_by.join(', ')}
                       </small>            
                     </div>
                 </div>
@@ -162,7 +162,7 @@
           const seenBy = data.seen_by;
           const seenByElement = document.getElementById(`seenBy-${messageId}`);
           if (seenByElement) {
-            seenByElement.textContent = `Seen by: ${seenBy.join(', ')}`;
+            seenByElement.textContent = `بازدیدها: ${seenBy.join(', ')}`;
           }
         }
       };
@@ -190,12 +190,7 @@
       }
     });
   
-    // Update user status to online when returning to the chat page
-    window.addEventListener('focus', () => {
-      if (chatSocket.readyState !== WebSocket.OPEN) {
-        connectSocket();
-      }
-    });
+   
   </script>
    
 {% endblock %}
