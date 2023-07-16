@@ -66,6 +66,10 @@
 
                       <p class="mb-1">{{ message.message }}</p>
                       <small style="font-size: 11px;">{{ message.timestamp }}</small>
+                      <small style="font-size: 11px;">
+                        بازدیدها: {% for user in message.seen_by.all %}
+                        {{ user.username }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                      </small>
                     </div>
                 </div>
             </div>
@@ -137,7 +141,10 @@
                       <small style="font-size: 13px;">${data.username}</small>
                       <span class="${onlineStatus}-indicator user-${data.username}">${statusText}</span>
                       <p class="mb-1">${message}</p>
-                      <small style="font-size: 11px;">${timestamp}</small>                
+                      <small style="font-size: 11px;">${timestamp}</small>    
+                      <small style="font-size: 11px;" id="seenBy-${data.message_id}">
+                        Seen by: ${data.seen_by.join(', ')}
+                      </small>            
                     </div>
                 </div>
             </div>
@@ -149,6 +156,14 @@
         } else if (data.username && data.online !== undefined) {
           // Received a user status update
           updateStatus(data.username, data.online);
+        } else if(data.seen_by){
+          // Received a seen_by update for a message
+          const messageId = data.message_id;
+          const seenBy = data.seen_by;
+          const seenByElement = document.getElementById(`seenBy-${messageId}`);
+          if (seenByElement) {
+            seenByElement.textContent = `Seen by: ${seenBy.join(', ')}`;
+          }
         }
       };
   
