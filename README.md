@@ -102,7 +102,9 @@ python manage.py test
 cd frontend && npm run build
 ```
 
-CI runs backend checks/tests and the frontend production build. A reproducible load-test script and benchmark procedure are planned; this repository currently makes no performance claims.
+CI runs backend checks/tests and the frontend production build. A reproducible load-test script is included; this repository currently makes no performance claims.
+
+To run the current WebSocket scenario with [k6](https://k6.io/), authenticate a test user and create the target room first, then run `k6 run -e ROOM_SLUG=load-test-room -e VUS=5 -e DURATION=30s scripts/load_test.js`. The script is a starting point for reproducible measurements; record environment, dataset, k6 output, and server configuration before comparing runs.
 
 ## Security
 
