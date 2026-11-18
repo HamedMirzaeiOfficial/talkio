@@ -2,6 +2,7 @@ from django.urls import path
 
 from .api import (
     ConversationListView,
+    UserDirectoryView,
     ConversationMessagesView,
     CsrfView,
     CurrentUserView,
@@ -24,6 +25,7 @@ urlpatterns = [
     path('auth/logout/', SessionLogoutView.as_view(), name='api-logout'),
     path('auth/me/', CurrentUserView.as_view(), name='api-me'),
     path('conversations/', ConversationListView.as_view(), name='conversation-list'),
+    path('users/', UserDirectoryView.as_view(), name='user-directory'),
     path('conversations/<slug:slug>/messages/', ConversationMessagesView.as_view(), name='conversation-messages'),
     path('messages/<uuid:server_id>/', MessageDetailView.as_view(), name='message-detail'),
     path('attachments/', AttachmentUploadView.as_view(), name='attachment-upload'),

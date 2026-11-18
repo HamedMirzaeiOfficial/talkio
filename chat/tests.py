@@ -33,6 +33,24 @@ class ChatApiTests(TestCase):
         forbidden = self.client.get('/api/v1/conversations/unknown/messages/')
         self.assertEqual(forbidden.status_code, 404)
 
+    def test_user_directory_and_direct_chat_are_usable(self):
+        directory = self.client.get('/api/v1/users/?q=Bob')
+        self.assertEqual(directory.status_code, 200)
+        self.assertEqual([item['id'] for item in directory.data['results']], [self.bob.pk])
+        created = self.client.post('/api/v1/conversations/', {'kind': 'direct', 'name': '', 'member_ids': [self.bob.pk]}, format='json')
+        self.assertEqual(created.status_code, 201)
+        self.assertEqual(created.data['kind'], 'direct')
+        repeated = self.client.post('/api/v1/conversations/', {'kind': 'direct', 'name': '', 'member_ids': [self.bob.pk]}, format='json')
+        self.assertEqual(repeated.status_code, 200)
+        self.assertEqual(repeated.data['slug'], created.data['slug'])
+
+    def test_group_creation_requires_members_and_name(self):
+        missing_name = self.client.post('/api/v1/conversations/', {'kind': 'group', 'name': '', 'member_ids': [self.bob.pk]}, format='json')
+        self.assertEqual(missing_name.status_code, 400)
+        created = self.client.post('/api/v1/conversations/', {'kind': 'group', 'name': 'Project room', 'member_ids': [self.bob.pk]}, format='json')
+        self.assertEqual(created.status_code, 201)
+        self.assertEqual(created.data['kind'], 'group')
+
     def test_session_registration_and_login(self):
         client = APIClient()
         registered = client.post('/api/v1/auth/register/', {'phone': '09120000009', 'password': 'safe-password-123', 'password_confirm': 'safe-password-123'}, format='json')

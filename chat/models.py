@@ -40,7 +40,9 @@ class UserStatus(User):
 
 
 class ChatRoom(General):
+    KIND_CHOICES = [('direct', 'Direct'), ('group', 'Group')]
     name = models.CharField(max_length=100, verbose_name='نام گروه')
+    kind = models.CharField(max_length=10, choices=KIND_CHOICES, default='group')
     slug = models.SlugField(max_length=225, unique=True, verbose_name='اسلاگ', blank=True, null=True)
     users = models.ManyToManyField(User, related_name='chat_rooms', verbose_name='کاربران')
 

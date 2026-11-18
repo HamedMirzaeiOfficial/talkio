@@ -34,6 +34,16 @@ def user_payload(user):
     }
 
 
+def room_payload(room, last_message=None):
+    return {
+        'slug': room.slug,
+        'name': room.name,
+        'kind': room.kind,
+        'members': [user_payload(user) for user in room.users.all()],
+        'last_message': message_payload(last_message) if last_message else None,
+    }
+
+
 def message_payload(message):
     return {
         'id': str(message.server_id or message.pk),
@@ -118,26 +128,51 @@ class ConversationListView(APIView):
             data.append({
                 'slug': room.slug,
                 'name': room.name,
+                'kind': room.kind,
                 'members': [user_payload(user) for user in room.users.all()],
                 'last_message': message_payload(last_message) if last_message else None,
             })
         return Response({'results': data})
 
     def post(self, request):
+        kind = str(request.data.get('kind', 'group')).strip()
         name = str(request.data.get('name', '')).strip()
         member_ids = request.data.get('member_ids', [])
-        if not name or len(name) > 100 or not isinstance(member_ids, list):
-            return Response({'error': {'code': 'invalid_conversation', 'message': 'A valid name and member_ids list are required.'}}, status=400)
+        if kind not in {'direct', 'group'} or not isinstance(member_ids, list) or not member_ids or len(member_ids) > 50:
+            return Response({'error': {'code': 'invalid_conversation', 'message': 'Choose valid members for this conversation.'}}, status=400)
+        if kind == 'group' and (not name or len(name) > 100):
+            return Response({'error': {'code': 'invalid_conversation', 'message': 'A group name is required.'}}, status=400)
         users = list(User.objects.filter(pk__in=member_ids))
         if len(users) != len(set(member_ids)):
             return Response({'error': {'code': 'invalid_members', 'message': 'One or more members do not exist.'}}, status=400)
+        if request.user in users:
+            users.remove(request.user)
+        if not users:
+            return Response({'error': {'code': 'invalid_members', 'message': 'Choose at least one other user.'}}, status=400)
+        if kind == 'direct':
+            if len(users) != 1:
+                return Response({'error': {'code': 'invalid_direct_members', 'message': 'A direct chat must have one other user.'}}, status=400)
+            existing = next((candidate for candidate in ChatRoom.objects.filter(kind='direct', users=request.user).prefetch_related('users') if set(candidate.users.values_list('pk', flat=True)) == {request.user.pk, users[0].pk}), None)
+            if existing:
+                return Response(room_payload(existing), status=200)
+            name = users[0].get_full_name() or users[0].username
         try:
             with transaction.atomic():
-                room = ChatRoom.objects.create(name=name)
+                room = ChatRoom.objects.create(name=name, kind=kind)
                 room.users.add(request.user, *users)
         except IntegrityError:
             return Response({'error': {'code': 'conversation_exists', 'message': 'Conversation could not be created.'}}, status=409)
-        return Response({'slug': room.slug, 'name': room.name, 'members': [user_payload(user) for user in room.users.all()]}, status=201)
+        return Response(room_payload(room), status=201)
+
+
+class UserDirectoryView(APIView):
+    def get(self, request):
+        query = str(request.query_params.get('q', '')).strip()
+        users = User.objects.exclude(pk=request.user.pk)
+        if query:
+            from django.db.models import Q
+            users = users.filter(Q(username__icontains=query) | Q(first_name__icontains=query) | Q(last_name__icontains=query))
+        return Response({'results': [user_payload(user) for user in users.order_by('first_name', 'last_name', 'username')[:30]]})
 
 
 class ConversationMessagesView(APIView):
