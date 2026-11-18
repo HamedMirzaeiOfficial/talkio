@@ -53,11 +53,12 @@ def persist_message(room, user, body, client_id):
 
 
 def message_payload(message):
+    display_name = f'{message.sender.first_name or ""} {message.sender.last_name or ""}'.strip() or message.sender.username or message.sender.phone or f'User {message.sender_id}'
     return {
         'id': str(message.server_id or message.pk),
         'client_id': message.client_id,
         'body': message.message,
-        'sender': {'id': message.sender_id, 'username': message.sender.username, 'display_name': message.sender.get_full_name() or message.sender.username},
+        'sender': {'id': message.sender_id, 'username': message.sender.username, 'display_name': display_name},
         'created_at': message.timestamp.isoformat(),
     }
 

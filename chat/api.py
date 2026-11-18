@@ -27,18 +27,24 @@ ALLOWED_ATTACHMENT_TYPES = {'image/jpeg', 'image/png', 'image/webp', 'image/gif'
 
 
 def user_payload(user):
+    display_name = f'{user.first_name or ""} {user.last_name or ""}'.strip() or user.username or user.phone or f'User {user.pk}'
     return {
         'id': user.pk,
         'username': user.username,
-        'display_name': user.get_full_name() or user.username,
+        'display_name': display_name,
         'email': user.email,
     }
 
 
-def room_payload(room, last_message=None):
+def room_payload(room, last_message=None, viewer=None):
+    name = room.name
+    if room.kind == 'direct' and viewer is not None:
+        other = room.users.exclude(pk=viewer.pk).first()
+        if other is not None:
+            name = user_payload(other)['display_name']
     return {
         'slug': room.slug,
-        'name': room.name,
+        'name': name,
         'kind': room.kind,
         'members': [user_payload(user) for user in room.users.all()],
         'last_message': message_payload(last_message) if last_message else None,
@@ -131,7 +137,7 @@ class ConversationListView(APIView):
             last_message = room.message_set.select_related('sender').order_by('-timestamp', '-pk').first()
             data.append({
                 'slug': room.slug,
-                'name': room.name,
+                'name': room_payload(room, last_message, request.user)['name'],
                 'kind': room.kind,
                 'members': [user_payload(user) for user in room.users.all()],
                 'last_message': message_payload(last_message) if last_message else None,
@@ -158,7 +164,7 @@ class ConversationListView(APIView):
                 return Response({'error': {'code': 'invalid_direct_members', 'message': 'A direct chat must have one other user.'}}, status=400)
             existing = next((candidate for candidate in ChatRoom.objects.filter(kind='direct', users=request.user).prefetch_related('users') if set(candidate.users.values_list('pk', flat=True)) == {request.user.pk, users[0].pk}), None)
             if existing:
-                return Response(room_payload(existing), status=200)
+                return Response(room_payload(existing, viewer=request.user), status=200)
             name = users[0].get_full_name() or users[0].username
         try:
             with transaction.atomic():
@@ -166,7 +172,7 @@ class ConversationListView(APIView):
                 room.users.add(request.user, *users)
         except IntegrityError:
             return Response({'error': {'code': 'conversation_exists', 'message': 'Conversation could not be created.'}}, status=409)
-        return Response(room_payload(room), status=201)
+        return Response(room_payload(room, viewer=request.user), status=201)
 
 
 class UserDirectoryView(APIView):
