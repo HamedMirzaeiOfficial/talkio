@@ -33,6 +33,7 @@ def user_payload(user):
         'username': user.username,
         'display_name': display_name,
         'email': user.email,
+        'avatar_url': user.avatar.url if user.avatar else None,
     }
 
 
@@ -62,6 +63,7 @@ def message_payload(message):
         'edited_at': message.edited_at.isoformat() if message.edited_at else None,
         'deleted_at': message.deleted_at.isoformat() if message.deleted_at else None,
         'forwarded_from': {'id': str(message.forwarded_from.server_id), 'sender': user_payload(message.forwarded_from.sender), 'body': message.forwarded_from.message} if message.forwarded_from_id else None,
+        'pinned_at': message.pinned_at.isoformat() if message.pinned_at else None,
         'attachments': [{'id': item.pk, 'name': item.original_name, 'content_type': item.content_type, 'size': item.size, 'url': f'/api/v1/attachments/{item.pk}/'} for item in message.attachments.all()],
         'reactions': list(message.reactions.values('emoji').annotate(count=Count('id'))),
     }
@@ -127,6 +129,23 @@ class SessionLogoutView(APIView):
 class CurrentUserView(APIView):
     def get(self, request):
         return Response({'user': user_payload(request.user)})
+
+    def patch(self, request):
+        user = request.user
+        for field in ('first_name', 'last_name', 'email'):
+            if field in request.data:
+                value = str(request.data.get(field, '')).strip()
+                if len(value) > (50 if field == 'last_name' else 254):
+                    return Response({'error': {'code': 'invalid_profile', 'message': 'Profile field is too long.'}}, status=400)
+                setattr(user, field, value)
+        avatar = request.FILES.get('avatar')
+        if avatar:
+            allowed = {'image/jpeg', 'image/png', 'image/webp'}
+            if avatar.size > 5 * 1024 * 1024 or avatar.content_type not in allowed:
+                return Response({'error': {'code': 'unsafe_avatar', 'message': 'Avatar must be a JPEG, PNG or WebP smaller than 5 MB.'}}, status=400)
+            user.avatar = avatar
+        user.save()
+        return Response({'user': user_payload(user)})
 
 
 class ConversationListView(APIView):
@@ -274,6 +293,23 @@ class MessageReactionView(APIView):
         if not created:
             reaction.delete()
         return Response({'message_id': str(message.server_id), 'emoji': emoji, 'active': created})
+
+
+class MessagePinView(APIView):
+    def post(self, request, server_id):
+        message = Message.objects.filter(server_id=server_id, chat_room__users=request.user).first()
+        if message is None:
+            return Response({'error': {'code': 'not_found', 'message': 'Message not found.'}}, status=404)
+        if message.pinned_at:
+            message.pinned_at = None
+            message.pinned_by = None
+            active = False
+        else:
+            message.pinned_at = timezone.now()
+            message.pinned_by = request.user
+            active = True
+        message.save(update_fields=['pinned_at', 'pinned_by', 'updated_at'])
+        return Response({'message_id': str(message.server_id), 'active': active})
 
 
 class MessageForwardView(APIView):

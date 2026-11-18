@@ -11,6 +11,7 @@ from .api import (
     MessageDetailView,
     MessageReactionView,
     MessageForwardView,
+    MessagePinView,
     AttachmentDownloadView,
     AttachmentUploadView,
     SessionLoginView,
@@ -32,6 +33,7 @@ urlpatterns = [
     path('messages/<uuid:server_id>/', MessageDetailView.as_view(), name='message-detail'),
     path('messages/<uuid:server_id>/reactions/', MessageReactionView.as_view(), name='message-reaction'),
     path('messages/<uuid:server_id>/forward/', MessageForwardView.as_view(), name='message-forward'),
+    path('messages/<uuid:server_id>/pin/', MessagePinView.as_view(), name='message-pin'),
     path('attachments/', AttachmentUploadView.as_view(), name='attachment-upload'),
     path('attachments/<int:attachment_id>/', AttachmentDownloadView.as_view(), name='attachment-download'),
 ]

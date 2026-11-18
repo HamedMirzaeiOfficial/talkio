@@ -77,6 +77,8 @@ class Message(General):
     edited_at = models.DateTimeField(null=True, blank=True)
     deleted_at = models.DateTimeField(null=True, blank=True)
     forwarded_from = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='forwards')
+    pinned_at = models.DateTimeField(null=True, blank=True)
+    pinned_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='pinned_messages')
 
     class Meta:
         indexes = [

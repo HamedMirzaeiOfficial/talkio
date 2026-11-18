@@ -46,6 +46,7 @@ class User(AbstractUser):
     valid_phone = models.BooleanField(default=False, verbose_name="تایید تلفن همراه")    
     valid_email = models.BooleanField(default=False, verbose_name="تایید ایمیل")
     date_of_birth = models.DateField(verbose_name="تاریخ تولد", null=True, blank=True)
+    avatar = models.ImageField(upload_to='avatars/%Y/%m/', null=True, blank=True)
 
     
     USERNAME_FIELD = 'phone'

@@ -126,6 +126,16 @@ class ChatApiTests(TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.data['message']['forwarded_from']['id'], str(source.server_id))
 
+    def test_profile_update_and_message_pin_are_authorized(self):
+        profile = self.client.patch('/api/v1/auth/me/', {'first_name': 'Alicia', 'email': 'alice@example.com'}, format='json')
+        self.assertEqual(profile.status_code, 200)
+        self.assertEqual(profile.data['user']['display_name'], 'Alicia')
+        message = Message.objects.create(chat_room=self.alice_room, sender=self.alice, message='pin', client_id='pin-1')
+        pinned = self.client.post(f'/api/v1/messages/{message.server_id}/pin/')
+        unpinned = self.client.post(f'/api/v1/messages/{message.server_id}/pin/')
+        self.assertTrue(pinned.data['active'])
+        self.assertFalse(unpinned.data['active'])
+
     def test_attachments_are_validated_and_authorized(self):
         message = Message.objects.create(chat_room=self.alice_room, sender=self.alice, message='file', client_id='file-message')
         safe_file = SimpleUploadedFile('note.txt', b'hello', content_type='text/plain')
