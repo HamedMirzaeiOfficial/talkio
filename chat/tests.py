@@ -3,12 +3,13 @@ from channels.routing import URLRouter
 from channels.testing import WebsocketCommunicator
 from django.test import TestCase
 from django.urls import re_path
+from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIClient
 
 from accounts.models import User
 
 from .consumers import ChatRoomConsumer
-from .models import ChatRoom, Message
+from .models import Attachment, ChatRoom, Message
 
 socket_application = URLRouter([re_path(r'^ws/chat/(?P<room_slug>[-\w]+)/$', ChatRoomConsumer.as_asgi())])
 
@@ -70,6 +71,19 @@ class ChatApiTests(TestCase):
         other.force_authenticate(self.bob)
         self.assertEqual(other.delete(f'/api/v1/messages/{message.server_id}/').status_code, 403)
         self.assertEqual(self.client.delete(f'/api/v1/messages/{message.server_id}/').status_code, 204)
+
+    def test_attachments_are_validated_and_authorized(self):
+        message = Message.objects.create(chat_room=self.alice_room, sender=self.alice, message='file', client_id='file-message')
+        safe_file = SimpleUploadedFile('note.txt', b'hello', content_type='text/plain')
+        uploaded = self.client.post('/api/v1/attachments/', {'message_id': str(message.server_id), 'file': safe_file}, format='multipart')
+        self.assertEqual(uploaded.status_code, 201)
+        self.assertEqual(Attachment.objects.count(), 1)
+        other = APIClient()
+        other.force_authenticate(User.objects.create_user(phone='09120000004', password='correct-password'))
+        attachment_id = uploaded.data['id']
+        self.assertEqual(other.get(f'/api/v1/attachments/{attachment_id}/').status_code, 404)
+        unsafe = SimpleUploadedFile('script.exe', b'MZ', content_type='application/x-msdownload')
+        self.assertEqual(self.client.post('/api/v1/attachments/', {'message_id': str(message.server_id), 'file': unsafe}, format='multipart').status_code, 400)
 
 
 class ChatWebsocketTests(TestCase):

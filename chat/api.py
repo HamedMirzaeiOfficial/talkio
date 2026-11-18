@@ -5,6 +5,8 @@ from django.db import IntegrityError, transaction
 from django.middleware.csrf import get_token
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
+from urllib.parse import quote
+from django.http import FileResponse
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -12,10 +14,12 @@ from rest_framework.views import APIView
 
 from accounts.models import User
 
-from .models import ChatRoom, Message
+from .models import Attachment, ChatRoom, Message
 
 
 MAX_MESSAGE_LENGTH = 4000
+MAX_ATTACHMENT_SIZE = 10 * 1024 * 1024
+ALLOWED_ATTACHMENT_TYPES = {'image/jpeg', 'image/png', 'image/webp', 'application/pdf', 'text/plain'}
 
 
 def user_payload(user):
@@ -196,6 +200,29 @@ class MessageDetailView(APIView):
         message.deleted_at = timezone.now()
         message.save(update_fields=['deleted_at', 'updated_at'])
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class AttachmentUploadView(APIView):
+    def post(self, request):
+        message_id = request.data.get('message_id')
+        message = Message.objects.filter(server_id=message_id, chat_room__users=request.user).first()
+        upload = request.FILES.get('file')
+        if message is None or upload is None:
+            return Response({'error': {'code': 'not_found', 'message': 'Message or file not found.'}}, status=404)
+        if upload.size > MAX_ATTACHMENT_SIZE or upload.content_type not in ALLOWED_ATTACHMENT_TYPES:
+            return Response({'error': {'code': 'unsafe_attachment', 'message': 'File type or size is not allowed.'}}, status=400)
+        attachment = Attachment.objects.create(message=message, uploaded_by=request.user, file=upload, original_name=upload.name[:255], content_type=upload.content_type, size=upload.size)
+        return Response({'id': attachment.pk, 'name': attachment.original_name, 'content_type': attachment.content_type, 'size': attachment.size}, status=201)
+
+
+class AttachmentDownloadView(APIView):
+    def get(self, request, attachment_id):
+        attachment = Attachment.objects.filter(pk=attachment_id, message__chat_room__users=request.user).first()
+        if attachment is None:
+            return Response({'error': {'code': 'not_found', 'message': 'Attachment not found.'}}, status=404)
+        response = FileResponse(attachment.file.open('rb'), content_type=attachment.content_type)
+        response['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote(attachment.original_name)}"
+        return response
 
 
 class HealthView(APIView):

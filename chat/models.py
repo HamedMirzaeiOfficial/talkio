@@ -90,4 +90,17 @@ class Message(General):
 
     def __str__(self):
         return self.message
+
+
+class Attachment(models.Model):
+    message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='attachments')
+    uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='chat_attachments')
+    file = models.FileField(upload_to='chat-attachments/%Y/%m/%d/')
+    original_name = models.CharField(max_length=255)
+    content_type = models.CharField(max_length=100)
+    size = models.PositiveBigIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [models.Index(fields=['message', '-created_at'], name='attachment_message_time_idx')]
     
