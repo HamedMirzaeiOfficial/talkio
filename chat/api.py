@@ -55,6 +55,7 @@ def message_payload(message):
         'created_at': message.timestamp.isoformat(),
         'edited_at': message.edited_at.isoformat() if message.edited_at else None,
         'deleted_at': message.deleted_at.isoformat() if message.deleted_at else None,
+        'forwarded_from': {'id': str(message.forwarded_from.server_id), 'sender': user_payload(message.forwarded_from.sender), 'body': message.forwarded_from.message} if message.forwarded_from_id else None,
         'attachments': [{'id': item.pk, 'name': item.original_name, 'content_type': item.content_type, 'size': item.size, 'url': f'/api/v1/attachments/{item.pk}/'} for item in message.attachments.all()],
         'reactions': list(message.reactions.values('emoji').annotate(count=Count('id'))),
     }
@@ -267,6 +268,23 @@ class MessageReactionView(APIView):
         if not created:
             reaction.delete()
         return Response({'message_id': str(message.server_id), 'emoji': emoji, 'active': created})
+
+
+class MessageForwardView(APIView):
+    def post(self, request, server_id):
+        source = Message.objects.filter(server_id=server_id, chat_room__users=request.user).select_related('sender').first()
+        target_slug = str(request.data.get('conversation', '')).strip()
+        client_id = str(request.data.get('client_id', '')).strip()
+        target = ChatRoom.objects.filter(slug=target_slug, users=request.user).first()
+        if source is None or target is None:
+            return Response({'error': {'code': 'not_found', 'message': 'Message or destination not found.'}}, status=404)
+        if not client_id or len(client_id) > 64:
+            return Response({'error': {'code': 'invalid_client_id', 'message': 'A client_id is required.'}}, status=400)
+        existing = Message.objects.filter(chat_room=target, sender=request.user, client_id=client_id).select_related('sender', 'forwarded_from').first()
+        if existing:
+            return Response({'message': message_payload(existing), 'deduplicated': True})
+        message = Message.objects.create(chat_room=target, sender=request.user, message=source.message, client_id=client_id, forwarded_from=source)
+        return Response({'message': message_payload(message)}, status=201)
 
 
 class AttachmentUploadView(APIView):

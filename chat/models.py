@@ -76,6 +76,7 @@ class Message(General):
     client_id = models.CharField(max_length=64, null=True, blank=True)
     edited_at = models.DateTimeField(null=True, blank=True)
     deleted_at = models.DateTimeField(null=True, blank=True)
+    forwarded_from = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='forwards')
 
     class Meta:
         indexes = [

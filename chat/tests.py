@@ -118,6 +118,14 @@ class ChatApiTests(TestCase):
         outsider.force_authenticate(User.objects.create_user(phone='09120000005', password='correct-password'))
         self.assertEqual(outsider.post(f'/api/v1/messages/{message.server_id}/reactions/', {'emoji': '🔥'}, format='json').status_code, 404)
 
+    def test_forward_requires_access_to_both_conversations_and_preserves_source(self):
+        destination = ChatRoom.objects.create(name='Forward destination')
+        destination.users.add(self.alice, self.bob)
+        source = Message.objects.create(chat_room=self.alice_room, sender=self.bob, message='forward me', client_id='forward-source')
+        response = self.client.post(f'/api/v1/messages/{source.server_id}/forward/', {'conversation': destination.slug, 'client_id': 'forward-1'}, format='json')
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data['message']['forwarded_from']['id'], str(source.server_id))
+
     def test_attachments_are_validated_and_authorized(self):
         message = Message.objects.create(chat_room=self.alice_room, sender=self.alice, message='file', client_id='file-message')
         safe_file = SimpleUploadedFile('note.txt', b'hello', content_type='text/plain')
