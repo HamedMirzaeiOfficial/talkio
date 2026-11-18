@@ -31,6 +31,12 @@ class ChatApiTests(TestCase):
         forbidden = self.client.get('/api/v1/conversations/unknown/messages/')
         self.assertEqual(forbidden.status_code, 404)
 
+    def test_session_registration_and_login(self):
+        client = APIClient()
+        registered = client.post('/api/v1/auth/register/', {'phone': '09120000009', 'password': 'safe-password-123', 'password_confirm': 'safe-password-123'}, format='json')
+        self.assertEqual(registered.status_code, 201)
+        self.assertEqual(client.get('/api/v1/auth/me/').data['user']['username'], '09120000009')
+
     def test_message_creation_is_idempotent(self):
         payload = {'body': 'hello', 'client_id': 'client-123'}
         first = self.client.post('/api/v1/conversations/alice-room/messages/', payload, format='json')

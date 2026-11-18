@@ -1,5 +1,6 @@
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.middleware.csrf import get_token
 from django.utils import timezone
@@ -50,8 +51,29 @@ class SessionLoginView(APIView):
         user = authenticate(request, username=identifier, password=password)
         if user is None:
             return Response({'error': {'code': 'invalid_credentials', 'message': 'Invalid credentials.'}}, status=401)
-        login(request, user)
+        login(request, user, backend='accounts.authentication.CustomModelBackend')
         return Response({'user': user_payload(user)})
+
+
+class SessionRegisterView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        phone = str(request.data.get('phone', '')).strip()
+        password = request.data.get('password', '')
+        password_confirm = request.data.get('password_confirm', '')
+        email = str(request.data.get('email', '')).strip() or None
+        if not phone or password != password_confirm:
+            return Response({'error': {'code': 'invalid_registration', 'message': 'Phone and matching passwords are required.'}}, status=400)
+        if User.objects.filter(phone=phone).exists():
+            return Response({'error': {'code': 'phone_taken', 'message': 'This phone number is already registered.'}}, status=409)
+        try:
+            validate_password(password)
+        except ValidationError as exc:
+            return Response({'error': {'code': 'weak_password', 'message': ' '.join(exc.messages)}}, status=400)
+        user = User.objects.create_user(phone=phone, email=email, password=password)
+        login(request, user, backend='accounts.authentication.CustomModelBackend')
+        return Response({'user': user_payload(user)}, status=201)
 
 
 class CsrfView(APIView):
