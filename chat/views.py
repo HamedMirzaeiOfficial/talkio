@@ -5,12 +5,13 @@ from django.views.generic import View, UpdateView
 from .forms import CreateChatRoomForm
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import login_required
 from accounts.models import User
 
 
 
-def get_chat_rooms_with_last_message():
-    chat_rooms = ChatRoom.objects.all()
+def get_chat_rooms_with_last_message(user=None):
+    chat_rooms = ChatRoom.objects.filter(users=user) if user and user.is_authenticated else ChatRoom.objects.none()
     chat_rooms_with_last_message = []
 
     for room in chat_rooms:
@@ -31,9 +32,10 @@ def get_chat_rooms_with_last_message():
 
 
 
+@login_required
 def room(request, slug):
-    chat_room = get_object_or_404(ChatRoom, slug=slug)
-    chat_messages = Message.objects.filter(chat_room=chat_room)
+    chat_room = get_object_or_404(ChatRoom, slug=slug, users=request.user)
+    chat_messages = Message.objects.filter(chat_room=chat_room).select_related('sender').order_by('timestamp', 'pk')
 
     context = {
         'room_name': chat_room.name,
@@ -54,17 +56,18 @@ class CreateChatRoomView(LoginRequiredMixin, View):
     
 
     def get(self, request, *args, **kwargs):
-        chat_rooms = get_chat_rooms_with_last_message()
+        chat_rooms = get_chat_rooms_with_last_message(request.user)
         form = self.form_class()
         return render(request, self.template_name, {'form': form, 'chat_rooms': chat_rooms})
 
     
     def post(self, request, *args, **kwargs):
-        chat_rooms = get_chat_rooms_with_last_message()
+        chat_rooms = get_chat_rooms_with_last_message(request.user)
         form = self.form_class(request.POST)
         if form.is_valid():
             room_name = form.cleaned_data['name']
             chat_room, created = ChatRoom.objects.get_or_create(name=room_name)
+            chat_room.users.add(request.user)
             return redirect(chat_room.get_absolute_url())
         return render(request, self.template_name, {'form': form, 'chat_rooms': chat_rooms, 'room_name': room_name})
 

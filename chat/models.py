@@ -1,4 +1,8 @@
+import uuid
+
 from django.db import models
+from django.db.models import Q
+from django.utils import timezone
 from jalali_date import datetime2jalali, date2jalali
 from django.core.validators import MaxLengthValidator
 from accounts.models import User
@@ -27,6 +31,8 @@ class General(models.Model):
 class UserStatus(User):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='status', verbose_name='کاربر')
     online = models.BooleanField(default=False, verbose_name='وضعیت آنلاین بودن')
+    active_connections = models.PositiveIntegerField(default=0)
+    last_seen_at = models.DateTimeField(null=True, blank=True)
 
     def is_online(self):
         return self.online
@@ -53,7 +59,9 @@ class ChatRoom(General):
 
 
     class Meta:
-        index_together = (('name', 'slug'), )
+        indexes = [
+            models.Index(fields=['name', 'slug'], name='chatroom_name_slug_idx'),
+        ]
     
 
 class Message(General):
@@ -62,6 +70,23 @@ class Message(General):
     message = models.TextField(verbose_name='متن پیام')
     timestamp = models.DateTimeField(auto_now_add=True, verbose_name='زمان ارسال')
     seen_by = models.ManyToManyField(User, related_name='seen_messages', blank=True, verbose_name='بازدیدها')
+    server_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False, null=True)
+    client_id = models.CharField(max_length=64, null=True, blank=True)
+    edited_at = models.DateTimeField(null=True, blank=True)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['chat_room', '-timestamp'], name='message_room_time_idx'),
+            models.Index(fields=['sender', 'chat_room', 'client_id'], name='message_idempotency_idx'),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['chat_room', 'sender', 'client_id'],
+                condition=Q(client_id__isnull=False),
+                name='unique_message_client_id',
+            ),
+        ]
 
     def __str__(self):
         return self.message

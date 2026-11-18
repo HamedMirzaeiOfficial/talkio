@@ -10,7 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
-from pathlib import Path, os
+from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -18,13 +19,23 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # ------------------------- Configs -------------------------
 # ------------------------------------------------------------
+def env_bool(name, default=False):
+    return os.getenv(name, str(int(default))).strip().lower() in {'1', 'true', 'yes', 'on'}
+
+
+def env_list(name, default=''):
+    return [item.strip() for item in os.getenv(name, default).split(',') if item.strip()]
+
+
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'local-only-insecure-development-key')
-DEBUG = True
+DEBUG = env_bool('DEBUG', True)
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+ALLOWED_HOSTS = env_list('ALLOWED_HOSTS', '127.0.0.1,localhost')
 
-CSRF_TRUSTED_ORIGINS = []
+CSRF_TRUSTED_ORIGINS = env_list('CSRF_TRUSTED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173')
+CORS_ALLOWED_ORIGINS = env_list('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173')
+CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = "core.urls"
 
@@ -55,6 +66,8 @@ THIRD_PARTY_APPS = [
     'admin_interface',
     'colorfield',
     'widget_tweaks', 
+    'rest_framework',
+    'corsheaders',
 
     # add this apps for login via google, github and ...
     'social_django',    
@@ -69,6 +82,7 @@ INSTALLED_APPS = THIRD_PARTY_APPS + LOCAL_APPS + DEFAULT_APPS
 
 # add new authentication backend for using django all-auth package
 AUTHENTICATION_BACKENDS = [
+    'accounts.authentication.CustomModelBackend',
     'social_core.backends.google.GoogleOAuth2', # for google
     'social_core.backends.github.GithubOAuth2', # for github
     'django.contrib.auth.backends.ModelBackend' # for normal authentication
@@ -88,6 +102,7 @@ SOCIAL_AUTH_GITHUB_SECRET = os.getenv('SOCIAL_AUTH_GITHUB_SECRET', '')
 # ------------------------------------------------
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -127,19 +142,25 @@ TEMPLATES = [
 
 # ------------------------- DATABASE -------------------------
 # ------------------------------------------------------------
-if DEBUG:
+if os.getenv('DB_ENGINE', '').endswith('postgresql') or os.getenv('DB_ENGINE', '').endswith('postgresql_psycopg2'):
     DATABASES = {
         'default': {
-                'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': BASE_DIR / 'db.sqlite3',
+            'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql'),
+            'NAME': os.getenv('DB_NAME', 'real_time_chat'),
+            'USER': os.getenv('DB_USER', 'postgres'),
+            'PASSWORD': os.getenv('DB_PASSWORD', ''),
+            'HOST': os.getenv('DB_HOST', '127.0.0.1'),
+            'PORT': os.getenv('DB_PORT', '5432'),
+            'CONN_MAX_AGE': int(os.getenv('DB_CONN_MAX_AGE', '60')),
         }
     }
 else:
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-        } 
-}
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / os.getenv('DB_NAME', 'db.sqlite3'),
+        }
+    }
 
 
 # ------------------ Password validation ---------------------
@@ -239,6 +260,8 @@ if not bool(DEBUG):
 
     # security.W012
     SESSION_COOKIE_SECURE = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_REFERRER_POLICY = 'same-origin'
 
 
     # security.W004
@@ -264,10 +287,25 @@ if not bool(DEBUG):
 
 WSGI_APPLICATION = "core.wsgi.application"
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+}
+
 ASGI_APPLICATION = "core.routing.application"
 
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer',
-    },
-}
+if env_bool('USE_REDIS_CHANNEL_LAYER', False):
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels_redis.core.RedisChannelLayer',
+            'CONFIG': {'hosts': [os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/0')]},
+        },
+    }
+else:
+    CHANNEL_LAYERS = {
+        'default': {'BACKEND': 'channels.layers.InMemoryChannelLayer'},
+    }

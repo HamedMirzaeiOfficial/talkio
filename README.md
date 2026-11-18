@@ -1,290 +1,128 @@
-# Sdata_RealTime_Chat
+# Pulse Chat
 
-Sdata RealTime Chat is A Django project to chat online with one or more people.
+Pulse Chat is a portfolio-oriented real-time messaging application built around a Django API, Django Channels, Redis, PostgreSQL, and a React client.
 
+The repository is intentionally a modular monolith: durable conversation/message state stays in Django and PostgreSQL, while Redis carries live events and ephemeral connection state. React owns the interaction-heavy workspace; Django templates remain only as legacy compatibility pages during the migration.
 
-<br>
-<h2>How to Run?</h2>
-<br>
+## Current verified features
 
-<h2>
-  Create a new virtual environment and activate it.
-</h2>
+- Session login/logout/me API with CSRF bootstrap.
+- React/Vite client with responsive dark-first chat workspace.
+- Conversation list and membership-filtered message history.
+- WebSocket message creation with server IDs, timestamps, request IDs, and duplicate prevention.
+- WebSocket authentication and conversation membership checks.
+- Basic typing, read, and presence event shapes.
+- Cursor-shaped history response and database indexes for room/time and idempotency lookup.
+- PostgreSQL/Redis Docker Compose development path.
+- Behavioral tests for API isolation, invalid payloads, idempotent writes, pagination, and WebSocket authorization/persistence.
 
-<h3>on Windows:</h3>
-<div class="highlight highlight-source-shell">
+Features such as attachments, group role management, message editing/deletion, durable read receipts, TTL-backed multi-device presence, and complete rate limiting remain on the roadmap. They are not presented as implemented here.
 
-  ```
-  $ pip install virtualenv
-  ```
-  <br>
-  
-  ```
-  $ virtualenv your_virtualenv_name
-  ```
-</div>
+## Architecture
 
+```mermaid
+flowchart LR
+  React[React / Vite client] -->|HTTPS + session cookie + CSRF| API[Django API]
+  React -->|WSS| Channels[Django Channels]
+  API --> Services[Chat domain services]
+  Channels --> Services
+  Services --> Postgres[(PostgreSQL)]
+  Channels <--> Redis[(Redis channel layer)]
+  API --> Media[Storage abstraction]
+```
 
-<h3>on Linux:</h3>
-<div class="highlight highlight-source-shell">
+See [architecture guide](docs/architecture/architecture.md), [current state](docs/architecture/current-state.md), and [proposed design](docs/architecture/proposed-design.md).
 
-  ```
-  $ sudo apt-get install python-pip
-  ```
-  <br>
-  
-  ```
-  $ pip install virtualenv
-  ```
-  <br>
-  
-  ```
-  $ virtualenv your_virtualenv_name
-  ```
-</div>
+## Engineering decisions
 
-<br>
+- **React client, Django backend:** the product now has a dedicated client boundary, but backend domain logic remains in one deployable service.
+- **Session auth first:** the browser and WebSocket handshake share Django session authentication and CSRF protection. JWT is intentionally deferred until a separate mobile/public API requirement exists.
+- **At-least-once WebSockets:** clients submit a request ID; database uniqueness makes retries idempotent. The system does not claim exactly-once delivery.
+- **Durable vs ephemeral state:** messages belong in PostgreSQL; presence and typing belong in the live transport layer and should not be treated as message history.
+- **Clean baseline migrations:** the local legacy SQLite database and old generated app migrations were reset because this portfolio repository has no data that needs preserving. Do not repeat that reset against a real deployment.
 
-<h2>
-  Set all required environment variables:
-</h2>
+## Local setup
 
+### Backend
 
-<br>
+```bash
+cd src
+python -m venv .venv
+# Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+copy .env.example .env  # PowerShell: Copy-Item .env.example .env
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py runserver
+```
 
-<h2>
-  Install the dependencies:
-</h2>
-<div class="highlight highlight-source-shell">
+### React client
 
-  ```
-  $ pip install -r requirements.txt
-  ```
-</div>
-<br>
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-<h2>
-  Create and migrate the database:
-</h2>
-<div class="highlight highlight-source-shell">
+Open `http://localhost:5173`. Vite proxies `/api` and `/ws` to Django during development.
 
-  ```
-  $ python manage.py migrate
-  ```
-</div>
-<br>
+### Docker Compose
 
-<h2>
-  Create a new superuser:
-</h2>
-<div class="highlight highlight-source-shell">
+```bash
+cd src
+copy .env.example .env
+docker compose up --build
+```
 
-  ```
-  $ python manage.py createsuperuser
-  ```
-</div>
-<br>
+Compose runs PostgreSQL, Redis, Daphne, and the Vite development server. The local Compose credentials are placeholders for development only.
 
-<h2>
-  Collect static files:
-</h2>
-<div class="highlight highlight-source-shell">
+## Environment variables
 
-  ```
-  $ python manage.py collectstatic
-  ```
-</div>
-<br>
+See [.env.example](.env.example). Important values include `DJANGO_SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS`, database settings, `REDIS_URL`, `USE_REDIS_CHANNEL_LAYER`, and optional social-auth credentials. Never commit real secrets.
 
-<h2>
-  Run the server on default port 8000:
-</h2>
-<div class="highlight highlight-source-shell">
+## WebSocket protocol
 
-  ```
-  $ python manage.py runserver
-  ```
-</div>
-<br>
+Endpoint: `ws(s)://host/ws/chat/<conversation-slug>/`.
 
-<h2>
-  How to get google keys?
-</h2>
+```json
+{"event":"message.create","request_id":"client-uuid","body":"Hello"}
+```
 
-<ol>
-  <li>
-    go to this link: <a href="https://console.developers.google.com">Google Developer Console</a>
-  </li>
+```json
+{"type":"message.created","request_id":"client-uuid","message":{"id":"server-uuid","body":"Hello","created_at":"2026-11-18T10:00:00Z"}}
+```
 
-  <li>
-    Select your country and confirm the terms and services.
-  </li>
-  <li>
-    Click on Select a new project
-  </li>
-  <li>
-    Click on credentials.
-  </li>
-  <li>
-    Click on “Configure Consent Screen”
-  </li>
-  <li>
-    Select External. Click on create.
-  </li>
-  <li>
-    Enter app name: testapp. Add your support email
-  </li>
-  <li>
-    At the bottom. Add developer contact information. Click on save and continue.
-  </li>
-  <li>
-    Click on save and continue 2 times. Then click on back to the dashboard.
-  </li>
-  <li>
-    Again click on credentials.
-  </li>
-  <li>
-    Click on create credentials. Click on OAuth Client ID.
-  </li>
-  <li>
-    Select Application type as web.
-  </li>
-  <li>
-    Add two Authorized JavaScript origin URLs: http://localhost:8000 and http://127.0.0.1:8000
-  </li>
-  <li>
-    Authorized Redirect URIs: http://localhost:8000/social-auth/complete/google-oauth2/
-  </li>
-  <li>
-    Click on create.
-  </li>
-  <li>
-    If you checked the video then make sure to hit the subscribe button. I make cool Django and react native applications. Your support will be admired. Copy and paste the client id and client secret to your settings.py. 
-  </li>
-  <li>
-    Copy and paste the client id and client secret to your settings.py.
+Typing, read, errors, reconnect expectations, and security semantics are documented in [websocket-protocol.md](docs/api/websocket-protocol.md).
 
-    SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = '##################################'
-    SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = '###########################'
+## Tests and quality checks
 
-  </li>
+```bash
+python manage.py check
+python manage.py test
+cd frontend && npm run build
+```
 
-</ol>
+CI runs backend checks/tests and the frontend production build. A reproducible load-test script and benchmark procedure are planned; this repository currently makes no performance claims.
 
+## Security
 
-<h2>How to get github keys?</h2>
-<ol>
-  <li>
-    You need a GitHub account.
-  </li>
-  <li>
-    Click on your profile. Then click on settings
-  </li>
-  <li>
-    Scroll down and click on developer settings (Left-Hand side)
-  </li>
-  <li>
-    Click on OAuth Apps
-  </li>
-  <li>
-    Click on Register a new application
-  </li>
-  <li>
-    Add application name: test
-  </li>
-  <li>  
-    Homepage URL: http://127.0.0.1:8000
-  </li>
-  <li>
-    Authorization callback URL: http://127.0.0.1:8000/social-auth/complete/github/
-  </li>
-  <li>
-    Click on Register application
-  </li>
-  <li>
-    Generate client secret code.
-  </li>
-  <li>
-    Copy and paste the client id and client secret to your settings.py.
+Do not run with `DEBUG=1` in production. Use a unique secret, explicit hosts, HTTPS, PostgreSQL, Redis, and protected attachment storage. All conversation access is membership-scoped. Message text must remain plain text in the client. See [security.md](docs/security.md).
 
-    SOCIAL_AUTH_GITHUB_KEY = '##############################'
-    SOCIAL_AUTH_GITHUB_SECRET = '###########################'
-  </li>
+## Known limitations
 
-</ol>
+- The current React slice is the first working client foundation, not the complete feature list in the product brief.
+- Legacy template pages still exist for compatibility and are not the primary UI.
+- Redis-backed TTL presence, uploads, rate limits, and full group administration still require implementation and tests.
+- No benchmark results are included.
 
-<hr>
-<h1>if you want to use accounts app with social-auth-app-django in a separate project</h1>
+## Roadmap
 
+1. Complete conversation/membership API and registration/profile flows.
+2. Add durable read state, unread counts, typing throttling, and TTL presence.
+3. Add edit/delete permissions and validated attachment storage/downloads.
+4. Expand Channels integration tests to Redis and concurrent duplicate submissions.
+5. Add reproducible load testing, observability, and deployment hardening.
 
+## License
 
-<h2>What is settings for authentication via google and github in settings.py:</h2>
-Add this line to installed apps:
-
-~~~bash  
-  INSTALLED_APPS = [
-    ...
-    ...
-    # add this apps for login via google, github and ...
-    'social_django',    
-]
-~~~
-
-Add this lines for authentication backends:
-
-~~~bash  
-# add new authentication backend for using django all-auth package
-AUTHENTICATION_BACKENDS = [
-    'social_core.backends.google.GoogleOAuth2', # for google
-    'social_core.backends.github.GithubOAuth2', # for github
-    'django.contrib.auth.backends.ModelBackend' # for normal authentication
-]
-
-~~~
-
-
-Add this middleware:
-
-~~~bash  
-MIDDLEWARE = [
-    ...
-    ...
-    'social_django.middleware.SocialAuthExceptionMiddleware', #add this middleware for login via social accounts
-]
-
-~~~
-
-
-Add this context processor:
-
-~~~bash  
-
-TEMPLATES = [
-    {
-        ...
-        'OPTIONS': {
-            'context_processors': [
-                ...
-                ...
-                'social_django.context_processors.backends', #add this context processor for login via social accounts
-            ],
-        },
-    },
-]
-
-~~~
-
-
-<h2>and the keys: </h2>
-
-~~~bash
-
-# key and secret for google
-SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.getenv('SOCIAL_AUTH_GOOGLE_OAUTH2_KEY', '')
-SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.getenv('SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET', '')
-
-# key and secret for github
-SOCIAL_AUTH_GITHUB_KEY = os.getenv('SOCIAL_AUTH_GITHUB_KEY', '')
-SOCIAL_AUTH_GITHUB_SECRET = os.getenv('SOCIAL_AUTH_GITHUB_SECRET', '')
-
-~~~
+No license file has been added yet. The project owner should choose the license before publishing.

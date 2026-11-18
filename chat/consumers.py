@@ -1,106 +1,109 @@
-import json
-from channels.generic.websocket import AsyncWebsocketConsumer
-from asgiref.sync import sync_to_async
-from accounts.models import User
-from .models import Message, ChatRoom, UserStatus
+import uuid
+
+from channels.db import database_sync_to_async
+from channels.generic.websocket import AsyncJsonWebsocketConsumer
+from django.db import IntegrityError, models, transaction
+from django.utils import timezone
+
+from .models import ChatRoom, Message, UserStatus
+
+MAX_MESSAGE_LENGTH = 4000
 
 
-class ChatRoomConsumer(AsyncWebsocketConsumer):
+@database_sync_to_async
+def get_authorized_room(slug, user):
+    if not user or not user.is_authenticated:
+        return None
+    return ChatRoom.objects.filter(slug=slug, users=user).first()
+
+
+@database_sync_to_async
+def open_presence(user):
+    status, _ = UserStatus.objects.get_or_create(user=user)
+    UserStatus.objects.filter(pk=status.pk).update(active_connections=models.F('active_connections') + 1, online=True)
+    return status.pk
+
+
+@database_sync_to_async
+def close_presence(status_id):
+    status = UserStatus.objects.filter(pk=status_id).first()
+    if status is None:
+        return
+    connections = max(0, status.active_connections - 1)
+    UserStatus.objects.filter(pk=status.pk).update(active_connections=connections, online=connections > 0, last_seen_at=timezone.now())
+
+
+@database_sync_to_async
+def persist_message(room, user, body, client_id):
+    existing = Message.objects.filter(chat_room=room, sender=user, client_id=client_id).select_related('sender').first()
+    if existing:
+        return existing, True
+    try:
+        with transaction.atomic():
+            message = Message.objects.create(chat_room=room, sender=user, message=body, client_id=client_id)
+    except IntegrityError:
+        message = Message.objects.get(chat_room=room, sender=user, client_id=client_id)
+        return message, True
+    return message, False
+
+
+def message_payload(message):
+    return {
+        'id': str(message.server_id or message.pk),
+        'client_id': message.client_id,
+        'body': message.message,
+        'sender': {'id': message.sender_id, 'username': message.sender.username, 'display_name': message.sender.get_full_name() or message.sender.username},
+        'created_at': message.timestamp.isoformat(),
+    }
+
+
+class ChatRoomConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
-        self.room_slug = self.scope['url_route']['kwargs']['room_slug']
-        self.room_group_name = f'chat_{self.room_slug}'
-        self.sender = self.scope['user']
-
-        # Update user status to online when connect happens.
-        user_status, _ = await sync_to_async(UserStatus.objects.get_or_create)(user=self.scope['user'])
-        user_status.online = True
-        await sync_to_async(user_status.save)()
-        
-
-        # Add the sender to the seen_by field of all messages in the chat room
-        self.chat_room = await sync_to_async(ChatRoom.objects.get)(slug=self.room_slug)
-        messages = await sync_to_async(Message.objects.filter)(chat_room=self.chat_room)
-        async for message in messages:
-            await sync_to_async(message.seen_by.add)(self.sender)
-
-
-        await self.channel_layer.group_add(
-            self.room_group_name,
-            self.channel_name
-        )
-
+        slug = self.scope['url_route']['kwargs']['room_slug']
+        self.chat_room = await get_authorized_room(slug, self.scope.get('user'))
+        if self.chat_room is None:
+            await self.close(code=4403)
+            return
+        self.room_group_name = f'chat_room_{self.chat_room.pk}'
+        self.status_id = await open_presence(self.scope['user'])
+        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
+        await self.channel_layer.group_send(self.room_group_name, {'type': 'presence.event', 'user_id': self.scope['user'].pk, 'status': 'online'})
 
-   
+    async def receive_json(self, content, **kwargs):
+        event = content.get('event')
+        if event == 'message.create' or ('message' in content and not event):
+            await self.create_message(content)
+        elif event in {'typing.start', 'typing.stop'}:
+            await self.channel_layer.group_send(self.room_group_name, {'type': 'typing.event', 'user_id': self.scope['user'].pk, 'is_typing': event.endswith('start')})
+        elif event == 'read.update':
+            await self.channel_layer.group_send(self.room_group_name, {'type': 'read.event', 'user_id': self.scope['user'].pk, 'message_id': content.get('message_id')})
+        else:
+            await self.send_json({'type': 'error', 'code': 'unknown_event', 'message': 'Unsupported event.'})
 
-    async def receive(self, text_data):
-        text_data_json = json.loads(text_data)
-        message = text_data_json['message']
-       
-        # Get user status
-        online = await sync_to_async(UserStatus.objects.get)(user=self.sender)
+    async def create_message(self, content):
+        body = str(content.get('body', content.get('message', ''))).strip()
+        client_id = str(content.get('request_id') or content.get('client_id') or uuid.uuid4())
+        if not body or len(body) > MAX_MESSAGE_LENGTH or len(client_id) > 64:
+            await self.send_json({'type': 'error', 'request_id': client_id, 'code': 'invalid_payload', 'message': 'Message body or request ID is invalid.'})
+            return
+        message, deduplicated = await persist_message(self.chat_room, self.scope['user'], body, client_id)
+        await self.channel_layer.group_send(self.room_group_name, {'type': 'message.event', 'message': message_payload(message), 'request_id': client_id, 'deduplicated': deduplicated})
 
-        # Create an object of message
-        message_obj = await sync_to_async(Message.objects.create)(chat_room=self.chat_room, sender=self.sender, message=message)
-        
-        # add user to list of seen by users and create a list of usernames
-        seen_by_users = await sync_to_async(message_obj.seen_by.all)()
-        seen_by_usernames = await sync_to_async(lambda: [user.username for user in seen_by_users])()
+    async def message_event(self, event):
+        await self.send_json({'type': 'message.created', 'request_id': event['request_id'], 'deduplicated': event['deduplicated'], 'message': event['message']})
 
-        # Notify the group about the new message
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            {
-                'type': 'chat_room_message',
-                'message': str(message),
-                'username': self.sender.username,
-                'online': online.is_online() if online else False, 
-                'seen_by': seen_by_usernames, 
-            }
-        )
+    async def presence_event(self, event):
+        await self.send_json({'type': 'presence.changed', 'user_id': event['user_id'], 'status': event['status']})
 
+    async def typing_event(self, event):
+        await self.send_json({'type': 'typing.changed', 'user_id': event['user_id'], 'is_typing': event['is_typing']})
 
-    async def chat_room_message(self, event):
-        message = event['message']
-        username = event['username']
-        online = event['online']
-        seen_by = event['seen_by']
-
-        await self.send(text_data=json.dumps({
-            'message': message,
-            'username': username,
-            'online': online, 
-            'seen_by': seen_by
-        }))
-        
-
-    async def user_status(self, event):
-        username = event['username']
-        online = event['online']
-
-        await self.send(text_data=json.dumps({
-            'username': username,
-            'online': online
-        }))
-
+    async def read_event(self, event):
+        await self.send_json({'type': 'message.read', 'user_id': event['user_id'], 'message_id': event['message_id']})
 
     async def disconnect(self, code):
-        # Get user status and change it to offline when disconnect happens  
-        user_status, _ = await sync_to_async(UserStatus.objects.get_or_create)(user=self.sender)
-        user_status.online = False
-        await sync_to_async(user_status.save)()
-
-
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            {
-                'type': 'user_status',
-                'username': self.sender.username,
-                'online': False
-            }
-        )
-
-        await self.channel_layer.group_discard(
-            self.room_group_name,
-            self.channel_name
-        )
+        if hasattr(self, 'status_id'):
+            await close_presence(self.status_id)
+        if hasattr(self, 'room_group_name'):
+            await self.channel_layer.group_discard(self.room_group_name, self.channel_name)

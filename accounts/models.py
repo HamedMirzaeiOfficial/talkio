@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.safestring import mark_safe
+from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
 from django.db.models import Q
 from jalali_date import datetime2jalali, date2jalali
@@ -36,7 +37,7 @@ class User(AbstractUser):
     
     first_name = models.CharField(verbose_name="نام", max_length=30, null=True, blank=False)
     last_name = models.CharField(verbose_name="نام خانوادگی", max_length=50, null=True, blank=False)
-    date_joined = models.DateTimeField(verbose_name="تاریخ عضویت", null=True, blank=True, default=datetime.now)
+    date_joined = models.DateTimeField(verbose_name="تاریخ عضویت", null=True, blank=True, default=timezone.now)
     last_update = models.DateTimeField(verbose_name="آخرین بروزرسانی", auto_now=True, null=True)
     last_login = models.DateTimeField(verbose_name="آخرین ورود", null=True, blank=True)
     gender = models.PositiveSmallIntegerField(verbose_name="جنسیت", choices=GENDER_CHOICES, default=1)

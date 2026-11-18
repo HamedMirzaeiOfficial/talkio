@@ -12,6 +12,7 @@ urlpatterns = [
     path('accounts/', include('accounts.urls', namespace='accounts')),
     path('chat/', include('chat.urls')),
     path('social-auth/', include('social_django.urls', namespace='social')),
+    path('api/v1/', include('chat.api_urls')),
     path('', RedirectView.as_view(url='/chat/')),
 
 ]
