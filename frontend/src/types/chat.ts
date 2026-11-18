@@ -34,6 +34,7 @@ export interface Conversation {
 }
 
 export interface UserPage { results: User[]; }
+export interface SearchResult { conversation: { slug: string; name: string }; message: Message; }
 
 export interface Page<T> {
   results: T[];

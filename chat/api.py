@@ -6,6 +6,7 @@ from django.conf import settings
 from django.core.cache import cache
 from django.db import IntegrityError, transaction
 from django.db.models import Count
+from django.db.models import Q
 from django.middleware.csrf import get_token
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
@@ -248,6 +249,31 @@ class ConversationMessagesView(APIView):
         except IntegrityError:
             message = Message.objects.get(chat_room=room, sender=request.user, client_id=client_id)
         return Response({'message': message_payload(message)}, status=status.HTTP_201_CREATED)
+
+
+class MessageSearchView(APIView):
+    page_size = 30
+
+    def get(self, request):
+        query = str(request.query_params.get('q', '')).strip()
+        if len(query) < 2 or len(query) > 100:
+            return Response({'error': {'code': 'invalid_query', 'message': 'Search must contain between 2 and 100 characters.'}}, status=400)
+        room_slug = str(request.query_params.get('conversation', '')).strip()
+        queryset = Message.objects.filter(chat_room__users=request.user).filter(
+            Q(message__icontains=query) | Q(sender__username__icontains=query) | Q(sender__first_name__icontains=query) | Q(sender__last_name__icontains=query)
+        ).select_related('sender', 'chat_room').prefetch_related('attachments', 'reactions').order_by('-timestamp', '-pk')
+        if room_slug:
+            queryset = queryset.filter(chat_room__slug=room_slug)
+        before = request.query_params.get('before')
+        if before:
+            cursor = parse_datetime(before)
+            if cursor is None:
+                return Response({'error': {'code': 'invalid_cursor', 'message': 'Invalid cursor.'}}, status=400)
+            queryset = queryset.filter(timestamp__lt=cursor)
+        rows = list(queryset[: self.page_size + 1])
+        has_more = len(rows) > self.page_size
+        rows = rows[: self.page_size]
+        return Response({'results': [{'conversation': {'slug': item.chat_room.slug, 'name': item.chat_room.name}, 'message': message_payload(item)} for item in rows], 'next_cursor': rows[-1].timestamp.isoformat() if has_more and rows else None})
 
 
 class MessageDetailView(APIView):

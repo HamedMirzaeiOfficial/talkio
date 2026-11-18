@@ -96,6 +96,16 @@ class ChatApiTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data['results']), 3)
 
+    def test_message_search_is_limited_to_authorized_conversations(self):
+        Message.objects.create(chat_room=self.alice_room, sender=self.bob, message='findable phrase', client_id='search-1')
+        response = self.client.get('/api/v1/messages/search/?q=findable')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data['results']), 1)
+        forbidden = APIClient()
+        outsider = User.objects.create_user(phone='09120000006', password='correct-password')
+        forbidden.force_authenticate(outsider)
+        self.assertEqual(forbidden.get('/api/v1/messages/search/?q=findable').data['results'], [])
+
     def test_only_sender_can_edit_or_delete(self):
         message = Message.objects.create(chat_room=self.alice_room, sender=self.alice, message='original', client_id='editable')
         edited = self.client.patch(f'/api/v1/messages/{message.server_id}/', {'body': 'updated'}, format='json')
