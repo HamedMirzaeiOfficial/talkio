@@ -23,7 +23,7 @@ from .models import Attachment, ChatRoom, Message, MessageReaction
 
 MAX_MESSAGE_LENGTH = 4000
 MAX_ATTACHMENT_SIZE = 10 * 1024 * 1024
-ALLOWED_ATTACHMENT_TYPES = {'image/jpeg', 'image/png', 'image/webp', 'application/pdf', 'text/plain'}
+ALLOWED_ATTACHMENT_TYPES = {'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf', 'text/plain', 'audio/mpeg', 'audio/ogg', 'audio/wav', 'video/mp4', 'video/webm'}
 
 
 def user_payload(user):
@@ -288,7 +288,8 @@ class AttachmentDownloadView(APIView):
         if attachment is None:
             return Response({'error': {'code': 'not_found', 'message': 'Attachment not found.'}}, status=404)
         response = FileResponse(attachment.file.open('rb'), content_type=attachment.content_type)
-        response['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote(attachment.original_name)}"
+        disposition = 'inline' if attachment.content_type.startswith(('image/', 'audio/', 'video/')) else 'attachment'
+        response['Content-Disposition'] = f"{disposition}; filename*=UTF-8''{quote(attachment.original_name)}"
         return response
 
 
