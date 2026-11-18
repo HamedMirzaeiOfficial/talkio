@@ -1,6 +1,7 @@
 import type { Conversation, Message, Page, User } from '../types/chat';
 
 const csrfCookie = (): string | undefined => document.cookie.split('; ').find((part) => part.startsWith('csrftoken='))?.split('=')[1];
+const ensureCsrf = async () => { if (!csrfCookie()) await fetch('/api/v1/auth/csrf/', { credentials: 'include' }); };
 
 export class ApiError extends Error {
   status: number;
@@ -8,14 +9,19 @@ export class ApiError extends Error {
   constructor(status: number, message: string, code?: string) { super(message); this.status = status; this.code = code; }
 }
 
-export async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+export async function request<T>(path: string, options: RequestInit = {}, retried = false): Promise<T> {
   const method = options.method ?? 'GET';
+  if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) await ensureCsrf();
   const headers = new Headers(options.headers);
   headers.set('Accept', 'application/json');
   if (options.body && !(options.body instanceof FormData)) headers.set('Content-Type', 'application/json');
   const csrf = csrfCookie();
   if (csrf && !['GET', 'HEAD', 'OPTIONS'].includes(method)) headers.set('X-CSRFToken', decodeURIComponent(csrf));
   const response = await fetch(`/api/v1${path}`, { ...options, method, credentials: 'include', headers });
+  if (response.status === 403 && !retried && !['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+    await fetch('/api/v1/auth/csrf/', { credentials: 'include' });
+    return request<T>(path, options, true);
+  }
   if (!response.ok) {
     const detail = await response.json().catch(() => ({})) as { error?: { code?: string; message?: string } };
     throw new ApiError(response.status, detail.error?.message ?? 'Something went wrong.', detail.error?.code);
