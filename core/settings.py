@@ -37,6 +37,21 @@ CSRF_TRUSTED_ORIGINS = env_list('CSRF_TRUSTED_ORIGINS', 'http://localhost:5173,h
 CORS_ALLOWED_ORIGINS = env_list('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173')
 CORS_ALLOW_CREDENTIALS = True
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'real-time-chat-local',
+    }
+}
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {'structured': {'format': '{"time":"%(asctime)s","level":"%(levelname)s","logger":"%(name)s","message":"%(message)s"}'}},
+    'handlers': {'console': {'class': 'logging.StreamHandler', 'formatter': 'structured'}},
+    'loggers': {'chat': {'handlers': ['console'], 'level': 'INFO', 'propagate': False}},
+}
+
 ROOT_URLCONF = "core.urls"
 
 
@@ -298,11 +313,13 @@ REST_FRAMEWORK = {
 
 ASGI_APPLICATION = "core.routing.application"
 
-if env_bool('USE_REDIS_CHANNEL_LAYER', False):
+USE_REDIS_CHANNEL_LAYER = env_bool('USE_REDIS_CHANNEL_LAYER', False)
+if USE_REDIS_CHANNEL_LAYER:
+    REDIS_URL = os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/0')
     CHANNEL_LAYERS = {
         'default': {
             'BACKEND': 'channels_redis.core.RedisChannelLayer',
-            'CONFIG': {'hosts': [os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/0')]},
+            'CONFIG': {'hosts': [REDIS_URL]},
         },
     }
 else:

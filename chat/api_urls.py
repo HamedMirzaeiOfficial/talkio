@@ -6,6 +6,7 @@ from .api import (
     CsrfView,
     CurrentUserView,
     HealthView,
+    ReadinessView,
     MessageDetailView,
     AttachmentDownloadView,
     AttachmentUploadView,
@@ -16,6 +17,7 @@ from .api import (
 
 urlpatterns = [
     path('health/', HealthView.as_view(), name='health'),
+    path('health/ready/', ReadinessView.as_view(), name='readiness'),
     path('auth/login/', SessionLoginView.as_view(), name='api-login'),
     path('auth/register/', SessionRegisterView.as_view(), name='api-register'),
     path('auth/csrf/', CsrfView.as_view(), name='api-csrf'),

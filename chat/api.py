@@ -1,6 +1,9 @@
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from django.db import connection
+from django.conf import settings
+from django.core.cache import cache
 from django.db import IntegrityError, transaction
 from django.middleware.csrf import get_token
 from django.utils import timezone
@@ -165,6 +168,8 @@ class ConversationMessagesView(APIView):
         existing = Message.objects.filter(chat_room=room, sender=request.user, client_id=client_id).select_related('sender').first()
         if existing:
             return Response({'message': message_payload(existing), 'deduplicated': True})
+        if not cache.add(f'chat-message-rate:{request.user.pk}', True, timeout=1):
+            return Response({'error': {'code': 'rate_limited', 'message': 'Please slow down and retry shortly.'}}, status=429)
         try:
             with transaction.atomic():
                 message = Message.objects.create(chat_room=room, sender=request.user, message=body, client_id=client_id)
@@ -230,3 +235,25 @@ class HealthView(APIView):
 
     def get(self, request):
         return Response({'status': 'ok'})
+
+
+class ReadinessView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        checks = {'database': False}
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute('SELECT 1')
+            checks['database'] = True
+        except Exception:
+            pass
+        if settings.USE_REDIS_CHANNEL_LAYER:
+            try:
+                import redis
+                redis.Redis.from_url(settings.REDIS_URL).ping()
+                checks['redis'] = True
+            except Exception:
+                checks['redis'] = False
+        ready = all(checks.values())
+        return Response({'status': 'ready' if ready else 'not_ready', 'checks': checks}, status=200 if ready else 503)

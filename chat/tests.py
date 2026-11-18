@@ -38,6 +38,13 @@ class ChatApiTests(TestCase):
         self.assertEqual(registered.status_code, 201)
         self.assertEqual(client.get('/api/v1/auth/me/').data['user']['username'], '09120000009')
 
+    def test_health_and_readiness(self):
+        client = APIClient()
+        self.assertEqual(client.get('/api/v1/health/').status_code, 200)
+        readiness = client.get('/api/v1/health/ready/')
+        self.assertEqual(readiness.status_code, 200)
+        self.assertTrue(readiness.data['checks']['database'])
+
     def test_message_creation_is_idempotent(self):
         payload = {'body': 'hello', 'client_id': 'client-123'}
         first = self.client.post('/api/v1/conversations/alice-room/messages/', payload, format='json')
