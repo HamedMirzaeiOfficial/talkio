@@ -15,7 +15,7 @@ export class ChatSocket {
     const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
     this.socket = new WebSocket(`${protocol}://${window.location.host}/ws/chat/${encodeURIComponent(this.options.slug)}/`);
     this.socket.onopen = () => { this.retry = 0; this.options.onStatus('online'); };
-    this.socket.onmessage = (event) => { try { this.options.onEvent(JSON.parse(event.data) as ServerEvent); } catch { /* Ignore malformed events. */ } };
+    this.socket.onmessage = (event) => { try { const payload = JSON.parse(event.data) as ServerEvent; this.options.onEvent(payload); if (payload.type === 'message.created') window.dispatchEvent(new CustomEvent('chat:incoming', { detail: payload })); } catch { /* Ignore malformed events. */ } };
     this.socket.onerror = () => this.socket?.close();
     this.socket.onclose = () => {
       if (this.stopped) return;

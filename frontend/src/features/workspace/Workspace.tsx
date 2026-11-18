@@ -6,7 +6,7 @@ import { Archive, ArrowDown, ArrowUpRight, Check, ChevronDown, CircleHelp, FileT
 import { api } from '../../lib/api';
 import { ChatSocket } from '../../lib/socket';
 import { useThemeStore } from '../../state/theme';
-import type { ConnectionStatus, Conversation, Message, Page, User } from '../../types/chat';
+import type { ConnectionStatus, Conversation, Message, Page, ServerEvent, User } from '../../types/chat';
 
 const initials = (value: string) => value.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase();
 const time = (value: string) => new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(new Date(value));
@@ -20,9 +20,9 @@ function ConversationItem({ room, active, onSelect }: { room: Conversation; acti
   return <button className={`conversation-row ${active ? 'is-active' : ''}`} onClick={onSelect}><Avatar name={room.name} online={active} /><span className="conversation-copy"><strong>{room.name}</strong><small>{room.last_message?.body || 'No messages yet'}</small></span><span className="conversation-meta">{room.last_message && time(room.last_message.created_at)}</span></button>;
 }
 
-function MessageItem({ message, currentUser, onEdit, onDelete }: { message: Message; currentUser: User; onEdit: (message: Message) => void; onDelete: (message: Message) => void }) {
+function MessageItem({ message, currentUser, onEdit, onDelete, onReact = (item, emoji) => { void api.react(item.id, emoji).then(() => window.dispatchEvent(new Event('chat:refresh'))); } }: { message: Message; currentUser: User; onEdit: (message: Message) => void; onDelete: (message: Message) => void; onReact?: (message: Message, emoji: string) => void }) {
   const mine = message.sender.id === currentUser.id;
-  return <motion.article initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={`message-row ${mine ? 'is-mine' : ''}`}><Avatar name={message.sender.display_name} /><div className="message-body"><div className="message-meta"><strong>{mine ? 'You' : message.sender.display_name}</strong><time>{time(message.created_at)}</time>{message.edited_at && <span>(edited)</span>}</div><div className="message-bubble"><p>{message.body || 'Message deleted'}</p>{mine && !message.deleted_at && <div className="message-actions"><IconButton label="Edit message" onClick={() => onEdit(message)}><PenLine size={14} /></IconButton><IconButton label="Delete message" onClick={() => onDelete(message)}><Trash2 size={14} /></IconButton></div>}</div></div></motion.article>;
+  return <motion.article initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={`message-row ${mine ? 'is-mine' : ''}`}><Avatar name={message.sender.display_name} /><div className="message-body"><div className="message-meta"><strong>{mine ? 'You' : message.sender.display_name}</strong><time>{time(message.created_at)}</time>{message.edited_at && <span>(edited)</span>}</div><div className="message-bubble"><p>{message.body || 'Message deleted'}</p>{message.attachments?.map((file) => <a className="attachment-card" key={file.id} href={file.url} download><FileText size={16} /><span>{file.name}<small>{Math.ceil(file.size / 1024)} KB</small></span></a>)}<div className="reaction-row">{message.reactions?.map((reaction) => <button key={reaction.emoji} onClick={() => onReact(message, reaction.emoji)}>{reaction.emoji} {reaction.count}</button>)}<button aria-label="Add reaction" onClick={() => onReact(message, '👍')}>＋</button></div>{mine && !message.deleted_at && <div className="message-actions"><IconButton label="Edit message" onClick={() => onEdit(message)}><PenLine size={14} /></IconButton><IconButton label="Delete message" onClick={() => onDelete(message)}><Trash2 size={14} /></IconButton></div>}</div></div></motion.article>;
 }
 
 export function Workspace({ user, onLogout }: { user: User; onLogout: () => void }) {
@@ -53,6 +53,8 @@ export function Workspace({ user, onLogout }: { user: User; onLogout: () => void
   const visibleRooms = rooms.filter((room) => `${room.name} ${room.last_message?.body ?? ''}`.toLowerCase().includes(search.toLowerCase()));
 
   useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
+  useEffect(() => { if (!('Notification' in window)) return; if (Notification.permission === 'default') void Notification.requestPermission(); const handler = (event: Event) => { const payload = (event as CustomEvent<ServerEvent>).detail; if (payload?.type === 'message.created' && payload.message.sender.id !== user.id && document.hidden && Notification.permission === 'granted') new Notification(payload.message.sender.display_name, { body: payload.message.body || 'New attachment' }); }; window.addEventListener('chat:incoming', handler); return () => window.removeEventListener('chat:incoming', handler); }, [user.id]);
+  useEffect(() => { const refresh = () => void queryClient.invalidateQueries({ queryKey: ['messages', selectedSlug] }); window.addEventListener('chat:refresh', refresh); return () => window.removeEventListener('chat:refresh', refresh); }, [queryClient, selectedSlug]);
   useEffect(() => { if (!selectedSlug && rooms[0]) setSelectedSlug(rooms[0].slug); }, [rooms, selectedSlug]);
   useEffect(() => { if (!selectedSlug) return; setMobileSidebar(false); const socket = new ChatSocket({ slug: selectedSlug, onStatus: setSocketStatus, onEvent: (event) => { if (event.type === 'message.created') { queryClient.setQueryData<Page<Message>>(['messages', selectedSlug], (old) => old ? { ...old, results: old.results.some((item) => item.id === event.message.id) ? old.results : [event.message, ...old.results] } : old); queryClient.invalidateQueries({ queryKey: ['conversations'] }); } if (event.type === 'typing.changed' && event.user_id !== user.id) setTyping(event.is_typing); } }); socketRef.current = socket; return () => { socket.close(); socketRef.current = null; setSocketStatus('offline'); }; }, [queryClient, selectedSlug, user.id]);
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages.length, selectedSlug]);
@@ -60,6 +62,7 @@ export function Workspace({ user, onLogout }: { user: User; onLogout: () => void
   const send = () => { const body = draft.trim(); if (!body || !selectedSlug) return; const requestId = crypto.randomUUID(); if (socketRef.current?.sendMessage(body, requestId)) setDraft(''); };
   const editMessage = async (message: Message) => { const body = window.prompt('Edit message', message.body); if (!body || body === message.body) return; await api.editMessage(message.id, body); queryClient.invalidateQueries({ queryKey: ['messages', selectedSlug] }); };
   const deleteMessage = async (message: Message) => { if (!window.confirm('Delete this message?')) return; await api.deleteMessage(message.id); queryClient.invalidateQueries({ queryKey: ['messages', selectedSlug] }); };
+  const reactToMessage = async (message: Message, emoji: string) => { await api.react(message.id, emoji); await queryClient.invalidateQueries({ queryKey: ['messages', selectedSlug] }); };
   const showNotice = (message: string) => { setNotice(message); window.setTimeout(() => setNotice(null), 3200); };
   const createConversation = async () => {
     const name = conversationName.trim();

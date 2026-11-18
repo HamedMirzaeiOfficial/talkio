@@ -16,7 +16,12 @@ export interface Message {
   created_at: string;
   edited_at?: string | null;
   deleted_at?: string | null;
+  attachments?: Attachment[];
+  reactions?: Reaction[];
 }
+
+export interface Attachment { id: number; name: string; content_type: string; size: number; url: string; }
+export interface Reaction { emoji: string; count: number; }
 
 export interface Conversation {
   slug: string;

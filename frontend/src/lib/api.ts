@@ -41,5 +41,6 @@ export const api = {
   createMessage: (slug: string, body: string, clientId: string) => request<{ message: Message }>(`/conversations/${encodeURIComponent(slug)}/messages/`, { method: 'POST', body: JSON.stringify({ body, client_id: clientId }) }),
   editMessage: (id: string, body: string) => request<{ message: Message }>(`/messages/${id}/`, { method: 'PATCH', body: JSON.stringify({ body }) }),
   deleteMessage: (id: string) => request<void>(`/messages/${id}/`, { method: 'DELETE' }),
+  react: (id: string, emoji: string) => request<{ message_id: string; emoji: string; active: boolean }>(`/messages/${id}/reactions/`, { method: 'POST', body: JSON.stringify({ emoji }) }),
   uploadAttachment: (messageId: string, file: File) => { const form = new FormData(); form.append('message_id', messageId); form.append('file', file); return request<{ id: number; name: string; content_type: string; size: number }>('/attachments/', { method: 'POST', body: form }); },
 };
