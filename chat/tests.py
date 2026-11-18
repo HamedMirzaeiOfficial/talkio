@@ -4,6 +4,7 @@ from channels.testing import WebsocketCommunicator
 from django.test import TestCase
 from django.urls import re_path
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import override_settings
 from rest_framework.test import APIClient
 
 from accounts.models import User
@@ -37,6 +38,14 @@ class ChatApiTests(TestCase):
         registered = client.post('/api/v1/auth/register/', {'phone': '09120000009', 'password': 'safe-password-123', 'password_confirm': 'safe-password-123'}, format='json')
         self.assertEqual(registered.status_code, 201)
         self.assertEqual(client.get('/api/v1/auth/me/').data['user']['username'], '09120000009')
+
+    @override_settings(DEMO_AUTH_ENABLED=True, DEMO_AUTH_CODE='123456')
+    def test_demo_login_uses_phone_and_code(self):
+        client = APIClient()
+        response = client.post('/api/v1/auth/login/', {'phone': '09120000010', 'code': '123456'}, format='json')
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data['demo'])
+        self.assertEqual(response.data['user']['username'], '09120000010')
 
     def test_health_and_readiness(self):
         client = APIClient()

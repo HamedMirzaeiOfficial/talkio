@@ -51,6 +51,14 @@ class SessionLoginView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        phone = str(request.data.get('phone', '')).strip()
+        code = str(request.data.get('code', '')).strip()
+        if settings.DEMO_AUTH_ENABLED:
+            if not phone or code != settings.DEMO_AUTH_CODE or not phone.isdigit():
+                return Response({'error': {'code': 'invalid_demo_credentials', 'message': 'Enter a valid phone number and demo code.'}}, status=401)
+            user, _ = User.objects.get_or_create(phone=phone, defaults={'username': phone})
+            login(request, user, backend='accounts.authentication.CustomModelBackend')
+            return Response({'user': user_payload(user), 'demo': True})
         identifier = str(request.data.get('identifier', '')).strip()
         password = request.data.get('password', '')
         if not identifier or not password:

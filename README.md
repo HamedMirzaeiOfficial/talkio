@@ -66,6 +66,8 @@ npm run dev
 
 Open `http://localhost:5173`. Vite proxies `/api` and `/ws` to Django during development.
 
+For local demo authentication, enter any numeric phone number and code `123456`. This flow is enabled only when `DEMO_AUTH_ENABLED=1` and must not be enabled in production.
+
 ### Docker Compose
 
 ```bash

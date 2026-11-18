@@ -16,6 +16,15 @@ import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Load local development values without overriding explicitly exported environment variables.
+ENV_FILE = BASE_DIR / '.env'
+if ENV_FILE.exists():
+    for line in ENV_FILE.read_text(encoding='utf-8').splitlines():
+        line = line.strip()
+        if line and not line.startswith('#') and '=' in line:
+            key, value = line.split('=', 1)
+            os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
 
 # ------------------------- Configs -------------------------
 # ------------------------------------------------------------
@@ -29,6 +38,8 @@ def env_list(name, default=''):
 
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'local-only-insecure-development-key')
 DEBUG = env_bool('DEBUG', True)
+DEMO_AUTH_ENABLED = env_bool('DEMO_AUTH_ENABLED', DEBUG)
+DEMO_AUTH_CODE = os.getenv('DEMO_AUTH_CODE', '123456')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 ALLOWED_HOSTS = env_list('ALLOWED_HOSTS', '127.0.0.1,localhost')
