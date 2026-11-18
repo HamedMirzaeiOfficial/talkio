@@ -1,4 +1,4 @@
-import type { Conversation, Message, Page, User } from '../types/chat';
+import type { Conversation, Message, Page, User, UserPage } from '../types/chat';
 
 const csrfCookie = (): string | undefined => document.cookie.split('; ').find((part) => part.startsWith('csrftoken='))?.split('=')[1];
 const ensureCsrf = async () => { if (!csrfCookie()) await fetch('/api/v1/auth/csrf/', { credentials: 'include' }); };
@@ -35,7 +35,8 @@ export const api = {
   login: (phone: string, code: string) => request<{ user: User }>('/auth/login/', { method: 'POST', body: JSON.stringify({ phone, code }) }),
   logout: () => request<void>('/auth/logout/', { method: 'POST' }),
   conversations: () => request<{ results: Conversation[] }>('/conversations/'),
-  createConversation: (name: string, memberIds: number[]) => request<Conversation>('/conversations/', { method: 'POST', body: JSON.stringify({ name, member_ids: memberIds }) }),
+  users: (query: string) => request<UserPage>(`/users/?q=${encodeURIComponent(query)}`),
+  createConversation: (kind: 'direct' | 'group', name: string, memberIds: number[]) => request<Conversation>('/conversations/', { method: 'POST', body: JSON.stringify({ kind, name, member_ids: memberIds }) }),
   messages: (slug: string) => request<Page<Message>>(`/conversations/${encodeURIComponent(slug)}/messages/`),
   createMessage: (slug: string, body: string, clientId: string) => request<{ message: Message }>(`/conversations/${encodeURIComponent(slug)}/messages/`, { method: 'POST', body: JSON.stringify({ body, client_id: clientId }) }),
   editMessage: (id: string, body: string) => request<{ message: Message }>(`/messages/${id}/`, { method: 'PATCH', body: JSON.stringify({ body }) }),

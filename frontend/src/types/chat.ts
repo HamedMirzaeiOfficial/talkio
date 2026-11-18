@@ -21,9 +21,12 @@ export interface Message {
 export interface Conversation {
   slug: string;
   name: string;
+  kind: 'direct' | 'group';
   members: User[];
   last_message: Message | null;
 }
+
+export interface UserPage { results: User[]; }
 
 export interface Page<T> {
   results: T[];
