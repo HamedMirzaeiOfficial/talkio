@@ -92,11 +92,6 @@ class User(AbstractUser):
             return self.get_full_name()
         return self.username
 
-    def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-            self.__previous_phone = self.phone
-            self.__previous_email = self.email
-
     def generate_random_code(self, length=6):
         """
         Generate a random code with a given length.

@@ -55,6 +55,16 @@ class ChatApiTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data['results']), 3)
 
+    def test_only_sender_can_edit_or_delete(self):
+        message = Message.objects.create(chat_room=self.alice_room, sender=self.alice, message='original', client_id='editable')
+        edited = self.client.patch(f'/api/v1/messages/{message.server_id}/', {'body': 'updated'}, format='json')
+        self.assertEqual(edited.status_code, 200)
+        self.assertEqual(edited.data['message']['body'], 'updated')
+        other = APIClient()
+        other.force_authenticate(self.bob)
+        self.assertEqual(other.delete(f'/api/v1/messages/{message.server_id}/').status_code, 403)
+        self.assertEqual(self.client.delete(f'/api/v1/messages/{message.server_id}/').status_code, 204)
+
 
 class ChatWebsocketTests(TestCase):
     def setUp(self):

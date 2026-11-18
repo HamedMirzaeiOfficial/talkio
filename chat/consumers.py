@@ -26,11 +26,16 @@ def open_presence(user):
 
 @database_sync_to_async
 def close_presence(status_id):
-    status = UserStatus.objects.filter(pk=status_id).first()
-    if status is None:
-        return
-    connections = max(0, status.active_connections - 1)
-    UserStatus.objects.filter(pk=status.pk).update(active_connections=connections, online=connections > 0, last_seen_at=timezone.now())
+    with transaction.atomic():
+        status = UserStatus.objects.filter(pk=status_id).first()
+        if status is None:
+            return
+        UserStatus.objects.filter(pk=status.pk, active_connections__gt=0).update(
+            active_connections=models.F('active_connections') - 1,
+            last_seen_at=timezone.now(),
+        )
+        status.refresh_from_db(fields=['active_connections'])
+        UserStatus.objects.filter(pk=status.pk).update(online=status.active_connections > 0)
 
 
 @database_sync_to_async

@@ -1,6 +1,8 @@
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.password_validation import validate_password
 from django.db import IntegrityError, transaction
 from django.middleware.csrf import get_token
+from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -84,6 +86,22 @@ class ConversationListView(APIView):
             })
         return Response({'results': data})
 
+    def post(self, request):
+        name = str(request.data.get('name', '')).strip()
+        member_ids = request.data.get('member_ids', [])
+        if not name or len(name) > 100 or not isinstance(member_ids, list):
+            return Response({'error': {'code': 'invalid_conversation', 'message': 'A valid name and member_ids list are required.'}}, status=400)
+        users = list(User.objects.filter(pk__in=member_ids))
+        if len(users) != len(set(member_ids)):
+            return Response({'error': {'code': 'invalid_members', 'message': 'One or more members do not exist.'}}, status=400)
+        try:
+            with transaction.atomic():
+                room = ChatRoom.objects.create(name=name)
+                room.users.add(request.user, *users)
+        except IntegrityError:
+            return Response({'error': {'code': 'conversation_exists', 'message': 'Conversation could not be created.'}}, status=409)
+        return Response({'slug': room.slug, 'name': room.name, 'members': [user_payload(user) for user in room.users.all()]}, status=201)
+
 
 class ConversationMessagesView(APIView):
     page_size = 50
@@ -127,6 +145,35 @@ class ConversationMessagesView(APIView):
         except IntegrityError:
             message = Message.objects.get(chat_room=room, sender=request.user, client_id=client_id)
         return Response({'message': message_payload(message)}, status=status.HTTP_201_CREATED)
+
+
+class MessageDetailView(APIView):
+    def get_message(self, request, server_id):
+        return Message.objects.filter(server_id=server_id, chat_room__users=request.user).select_related('sender', 'chat_room').first()
+
+    def patch(self, request, server_id):
+        message = self.get_message(request, server_id)
+        if message is None:
+            return Response({'error': {'code': 'not_found', 'message': 'Message not found.'}}, status=404)
+        if message.sender_id != request.user.pk or message.deleted_at:
+            return Response({'error': {'code': 'forbidden', 'message': 'Only the sender can edit this message.'}}, status=403)
+        body = str(request.data.get('body', '')).strip()
+        if not body or len(body) > MAX_MESSAGE_LENGTH:
+            return Response({'error': {'code': 'invalid_body', 'message': 'Message length is invalid.'}}, status=400)
+        message.message = body
+        message.edited_at = timezone.now()
+        message.save(update_fields=['message', 'edited_at', 'updated_at'])
+        return Response({'message': message_payload(message)})
+
+    def delete(self, request, server_id):
+        message = self.get_message(request, server_id)
+        if message is None:
+            return Response({'error': {'code': 'not_found', 'message': 'Message not found.'}}, status=404)
+        if message.sender_id != request.user.pk:
+            return Response({'error': {'code': 'forbidden', 'message': 'Only the sender can delete this message.'}}, status=403)
+        message.deleted_at = timezone.now()
+        message.save(update_fields=['deleted_at', 'updated_at'])
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class HealthView(APIView):

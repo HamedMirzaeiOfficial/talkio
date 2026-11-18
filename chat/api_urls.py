@@ -6,6 +6,7 @@ from .api import (
     CsrfView,
     CurrentUserView,
     HealthView,
+    MessageDetailView,
     SessionLoginView,
     SessionLogoutView,
 )
@@ -18,4 +19,5 @@ urlpatterns = [
     path('auth/me/', CurrentUserView.as_view(), name='api-me'),
     path('conversations/', ConversationListView.as_view(), name='conversation-list'),
     path('conversations/<slug:slug>/messages/', ConversationMessagesView.as_view(), name='conversation-messages'),
+    path('messages/<uuid:server_id>/', MessageDetailView.as_view(), name='message-detail'),
 ]
