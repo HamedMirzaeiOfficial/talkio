@@ -33,6 +33,8 @@ flowchart LR
 
 See [architecture guide](docs/architecture/architecture.md), [current state](docs/architecture/current-state.md), and [proposed design](docs/architecture/proposed-design.md).
 
+Frontend implementation details are documented in [frontend-architecture.md](docs/frontend-architecture.md) and [design-system.md](docs/design-system.md). The client uses React, TypeScript, Vite, Tailwind CSS, TanStack Query, Zustand, React Hook Form/Zod, Radix primitives, Lucide icons, and Motion for restrained transitions.
+
 ## Engineering decisions
 
 - **React client, Django backend:** the product now has a dedicated client boundary, but backend domain logic remains in one deployable service.
