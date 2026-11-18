@@ -5,6 +5,7 @@ from django.db import connection
 from django.conf import settings
 from django.core.cache import cache
 from django.db import IntegrityError, transaction
+from django.db.models import Count
 from django.middleware.csrf import get_token
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
@@ -17,7 +18,7 @@ from rest_framework.views import APIView
 
 from accounts.models import User
 
-from .models import Attachment, ChatRoom, Message
+from .models import Attachment, ChatRoom, Message, MessageReaction
 
 
 MAX_MESSAGE_LENGTH = 4000
@@ -54,6 +55,8 @@ def message_payload(message):
         'created_at': message.timestamp.isoformat(),
         'edited_at': message.edited_at.isoformat() if message.edited_at else None,
         'deleted_at': message.deleted_at.isoformat() if message.deleted_at else None,
+        'attachments': [{'id': item.pk, 'name': item.original_name, 'content_type': item.content_type, 'size': item.size, 'url': f'/api/v1/attachments/{item.pk}/'} for item in message.attachments.all()],
+        'reactions': list(message.reactions.values('emoji').annotate(count=Count('id'))),
     }
 
 
@@ -248,6 +251,22 @@ class MessageDetailView(APIView):
         message.deleted_at = timezone.now()
         message.save(update_fields=['deleted_at', 'updated_at'])
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class MessageReactionView(APIView):
+    allowed_emojis = {'👍', '❤️', '😂', '😮', '😢', '🔥'}
+
+    def post(self, request, server_id):
+        message = Message.objects.filter(server_id=server_id, chat_room__users=request.user).first()
+        emoji = str(request.data.get('emoji', '')).strip()
+        if message is None:
+            return Response({'error': {'code': 'not_found', 'message': 'Message not found.'}}, status=404)
+        if emoji not in self.allowed_emojis:
+            return Response({'error': {'code': 'invalid_reaction', 'message': 'This reaction is not supported.'}}, status=400)
+        reaction, created = MessageReaction.objects.get_or_create(message=message, user=request.user, emoji=emoji)
+        if not created:
+            reaction.delete()
+        return Response({'message_id': str(message.server_id), 'emoji': emoji, 'active': created})
 
 
 class AttachmentUploadView(APIView):

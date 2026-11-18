@@ -10,7 +10,7 @@ from rest_framework.test import APIClient
 from accounts.models import User
 
 from .consumers import ChatRoomConsumer
-from .models import Attachment, ChatRoom, Message
+from .models import Attachment, ChatRoom, Message, MessageReaction
 
 socket_application = URLRouter([re_path(r'^ws/chat/(?P<room_slug>[-\w]+)/$', ChatRoomConsumer.as_asgi())])
 
@@ -105,6 +105,18 @@ class ChatApiTests(TestCase):
         other.force_authenticate(self.bob)
         self.assertEqual(other.delete(f'/api/v1/messages/{message.server_id}/').status_code, 403)
         self.assertEqual(self.client.delete(f'/api/v1/messages/{message.server_id}/').status_code, 204)
+
+    def test_reactions_are_member_scoped_and_toggle(self):
+        message = Message.objects.create(chat_room=self.alice_room, sender=self.alice, message='react', client_id='reaction')
+        first = self.client.post(f'/api/v1/messages/{message.server_id}/reactions/', {'emoji': '👍'}, format='json')
+        second = self.client.post(f'/api/v1/messages/{message.server_id}/reactions/', {'emoji': '👍'}, format='json')
+        self.assertEqual(first.status_code, 200)
+        self.assertTrue(first.data['active'])
+        self.assertFalse(second.data['active'])
+        self.assertFalse(MessageReaction.objects.filter(message=message).exists())
+        outsider = APIClient()
+        outsider.force_authenticate(User.objects.create_user(phone='09120000005', password='correct-password'))
+        self.assertEqual(outsider.post(f'/api/v1/messages/{message.server_id}/reactions/', {'emoji': '🔥'}, format='json').status_code, 404)
 
     def test_attachments_are_validated_and_authorized(self):
         message = Message.objects.create(chat_room=self.alice_room, sender=self.alice, message='file', client_id='file-message')
