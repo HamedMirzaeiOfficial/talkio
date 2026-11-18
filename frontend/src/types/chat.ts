@@ -5,6 +5,7 @@ export interface User {
   username: string;
   display_name: string;
   email?: string | null;
+  avatar_url?: string | null;
 }
 
 export interface Message {
@@ -18,6 +19,7 @@ export interface Message {
   deleted_at?: string | null;
   attachments?: Attachment[];
   reactions?: Reaction[];
+  pinned_at?: string | null;
 }
 
 export interface Attachment { id: number; name: string; content_type: string; size: number; url: string; }

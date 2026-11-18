@@ -32,6 +32,7 @@ export async function request<T>(path: string, options: RequestInit = {}, retrie
 export const api = {
   csrf: () => request<{ csrf_token: string }>('/auth/csrf/'),
   me: () => request<{ user: User }>('/auth/me/'),
+  updateProfile: (data: FormData) => request<{ user: User }>('/auth/me/', { method: 'PATCH', body: data }),
   login: (phone: string, code: string) => request<{ user: User }>('/auth/login/', { method: 'POST', body: JSON.stringify({ phone, code }) }),
   logout: () => request<void>('/auth/logout/', { method: 'POST' }),
   conversations: () => request<{ results: Conversation[] }>('/conversations/'),
@@ -42,5 +43,6 @@ export const api = {
   editMessage: (id: string, body: string) => request<{ message: Message }>(`/messages/${id}/`, { method: 'PATCH', body: JSON.stringify({ body }) }),
   deleteMessage: (id: string) => request<void>(`/messages/${id}/`, { method: 'DELETE' }),
   react: (id: string, emoji: string) => request<{ message_id: string; emoji: string; active: boolean }>(`/messages/${id}/reactions/`, { method: 'POST', body: JSON.stringify({ emoji }) }),
+  pin: (id: string) => request<{ message_id: string; active: boolean }>(`/messages/${id}/pin/`, { method: 'POST' }),
   uploadAttachment: (messageId: string, file: File) => { const form = new FormData(); form.append('message_id', messageId); form.append('file', file); return request<{ id: number; name: string; content_type: string; size: number }>('/attachments/', { method: 'POST', body: form }); },
 };
