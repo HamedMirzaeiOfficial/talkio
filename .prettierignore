@@ -1,0 +1,12 @@
+dist
+node_modules
+coverage
+**/static
+apps/server
+packages/django-chat
+*.md
+package-lock.json
+test-results
+playwright-report
+examples/django-integration
+.venv

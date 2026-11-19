@@ -1,0 +1,45 @@
+{
+  "name": "talkio-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "workspaces": [
+    "packages/chat-client",
+    "packages/react-chat",
+    "apps/web",
+    "examples/react-integration"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "npm run build -w @realtime-chat/client && npm run build -w @realtime-chat/react && npm run build -w @talkio/web && npm run build -w react-integration-example",
+    "build:packages": "npm run build -w @realtime-chat/client && npm run build -w @realtime-chat/react",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "dev:web": "npm run dev -w @talkio/web"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
+    "@testing-library/user-event": "^14.5.2",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "eslint": "^9.17.0",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "globals": "^15.14.0",
+    "jsdom": "^25.0.1",
+    "prettier": "^3.4.2",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "typescript": "~5.7.2",
+    "typescript-eslint": "^8.18.0",
+    "vite": "^6.4.6",
+    "vitest": "^3.2.7"
+  }
+}

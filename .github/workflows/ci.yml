@@ -2,33 +2,112 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  backend:
+  django-package:
+    name: django-realtime-chat (Django ${{ matrix.django }}, ${{ matrix.db }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { django: '4.2', python: '3.11', db: sqlite }
+          - { django: '5.2', python: '3.12', db: sqlite }
+          - { django: '5.2', python: '3.12', db: postgres }
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: { POSTGRES_USER: chat, POSTGRES_PASSWORD: chat, POSTGRES_DB: chat }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U chat" --health-interval 5s --health-timeout 5s --health-retries 10
     defaults:
       run:
-        working-directory: src
+        working-directory: packages/django-chat
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - run: pip install -r requirements.txt
-      - run: python manage.py check
-      - run: python manage.py test
-  frontend:
+        with: { python-version: '${{ matrix.python }}' }
+      - run: pip install "Django~=${{ matrix.django }}.0" -e ".[test,redis]" "psycopg[binary]" ruff build
+      - run: ruff check src tests && ruff format --check src tests
+      - name: Migrations are up to date
+        run: DJANGO_SETTINGS_MODULE=tests.settings PYTHONPATH=. django-admin makemigrations realtime_chat --check --dry-run
+      - name: Tests
+        run: pytest -q
+        env:
+          # tests/settings.py switches to PostgreSQL when TEST_DATABASE_URL is set.
+          TEST_DATABASE_URL: ${{ matrix.db == 'postgres' && 'postgres://chat:chat@localhost:5432/chat' || '' }}
+      - run: python -m build
+
+  server:
+    name: Standalone server
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: src/frontend
+        working-directory: apps/server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install -r requirements-dev.txt
+      - run: ruff check . && ruff format --check .
+      - run: DEBUG=1 python manage.py check && DEBUG=1 python manage.py makemigrations --check --dry-run
+      - run: DEBUG=0 DJANGO_SECRET_KEY=ci-only-secret python manage.py check --deploy --fail-level ERROR
+      - run: DEBUG=1 pytest -q
+
+  frontend:
+    name: TypeScript packages and web app
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: npm
-          cache-dependency-path: src/frontend/package-lock.json
+        with: { node-version: '22', cache: npm }
       - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run build:packages
+      - run: npm run typecheck
+      - run: npm test
       - run: npm run build
+
+  packages:
+    name: Package installation
+    needs: [django-package, frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: npm }
+      - run: pip install build && npm ci
+      - run: ./scripts/verify-packages.sh
+
+  e2e:
+    name: End-to-end (Playwright)
+    needs: [server, frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: npm }
+      - run: pip install -r apps/server/requirements.txt && npm ci && npm run build:packages
+      - run: npx playwright install --with-deps chromium
+        working-directory: apps/web
+      - run: npx playwright test --project=desktop --project=mobile
+        working-directory: apps/web
+        env:
+          E2E_START_SERVERS: '1'
+          DEBUG: '1'
+          CSRF_TRUSTED_ORIGINS: http://127.0.0.1:4801
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with: { name: playwright-traces, path: apps/web/test-results }
