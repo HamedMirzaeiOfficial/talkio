@@ -1,0 +1,43 @@
+@import 'tailwindcss';
+@import '@realtime-chat/react/styles.css';
+@import '@fontsource-variable/inter';
+@import '@fontsource/vazirmatn/400.css';
+@import '@fontsource/vazirmatn/500.css';
+@import '@fontsource/vazirmatn/600.css';
+
+/* The app shares the library's design tokens: one token system for chrome and chat. */
+@theme inline {
+  --color-bg: var(--rc-bg);
+  --color-sidebar: var(--rc-sidebar);
+  --color-surface: var(--rc-surface);
+  --color-surface-2: var(--rc-surface-2);
+  --color-border: var(--rc-border);
+  --color-fg: var(--rc-text);
+  --color-muted: var(--rc-muted);
+  --color-subtle: var(--rc-subtle);
+  --color-primary: var(--rc-primary);
+  --color-primary-fg: var(--rc-primary-fg);
+  --color-primary-soft: var(--rc-primary-soft);
+  --color-danger: var(--rc-danger);
+  --color-success: var(--rc-success);
+  --font-sans: var(--rc-font);
+  --radius-ui: var(--rc-radius);
+}
+
+@custom-variant dark (&:where([data-rc-theme='dark'], [data-rc-theme='dark'] *));
+
+html,
+body,
+#root {
+  height: 100%;
+}
+body {
+  background: var(--rc-bg);
+  color: var(--rc-text);
+  font-family: var(--rc-font);
+  -webkit-tap-highlight-color: transparent;
+}
+:focus-visible {
+  outline: 2px solid var(--rc-ring);
+  outline-offset: 2px;
+}
