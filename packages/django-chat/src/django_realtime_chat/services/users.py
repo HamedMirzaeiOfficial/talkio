@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from django.contrib.auth import get_user_model
+from django.utils.translation import gettext
 
 from ..errors import FeatureDisabled, NotFound, ValidationFailed
 from ..models import Membership
@@ -19,10 +20,10 @@ def search_users(user: Any, query: Any) -> list[dict[str, Any]]:
     """Search discoverable users. An empty query returns people the user already chats with."""
     policy = get_policy()
     if not policy.can_search_users(user):
-        raise FeatureDisabled("User search is disabled.")
+        raise FeatureDisabled(gettext("User search is disabled."))
     query = str(query or "").strip()
     if len(query) > 100:
-        raise ValidationFailed("The search is too long.", code="invalid_query")
+        raise ValidationFailed(gettext("The search is too long."), code="invalid_query")
     base = policy.user_queryset(user).exclude(pk=user.pk)
     if query:
         users = list(get_user_adapter().search(base, query).order_by("pk")[:LIMIT])
@@ -46,7 +47,7 @@ def get_user_profile(user: Any, user_id: Any) -> dict[str, Any]:
     policy = get_policy()
     user_id = clean_user_id(user_id)
     if user_id is None:
-        raise NotFound("User not found.")
+        raise NotFound(gettext("User not found."))
     try:
         target = policy.user_queryset(user).get(pk=user_id)
     except get_user_model().DoesNotExist as exc:
@@ -61,6 +62,6 @@ def get_user_profile(user: Any, user_id: Any) -> dict[str, Any]:
             .first()
         )
         if shared is None:
-            raise NotFound("User not found.") from exc
+            raise NotFound(gettext("User not found.")) from exc
         target = shared.user
     return user_profile_payload(target)

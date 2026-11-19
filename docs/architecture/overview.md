@@ -1,5 +1,7 @@
 # Architecture overview
 
+**English** · [فارسی](../fa/architecture.md)
+
 Talkio is a modular monolith plus three reusable packages. The standalone product consumes the packages exactly like a third-party host; there is one messaging backend and one set of chat components.
 
 ```mermaid
@@ -59,6 +61,8 @@ sequenceDiagram
   Note over SDK: no ack in 8 s → POST same client_id over HTTP (deduplicated)
 ```
 
+**Language:** the SDK sends the UI language as `Accept-Language` on REST requests and `?lang=` on the socket; `LocaleMiddleware` and the WebSocket consumer word error messages in it (gettext catalogs in `locale/`).
+
 **Reconnect:** backoff with full jitter → `connection.ready` → reload conversations → `after=<last seq>` per open conversation → `updated_since=<last ready>` → resend failed messages with their `client_id`.
 
 ## Module map
@@ -73,6 +77,7 @@ sequenceDiagram
 | WebSocket | `…/ws/consumer.py`, `…/ws/middleware.py`, `…/ws/tickets.py` |
 | Fan-out | `…/events.py` |
 | Presence | `…/presence.py` (memory/Redis leases), `…/services/presence.py` |
+| Translations | `…/locale/fa/`, `apps/server/locale/fa/`, `scripts/i18n.py`; app: `apps/web/src/lib/i18n.ts`; library: `packages/react-chat/src/locales/fa.ts` |
 | SDK | `packages/chat-client/src/` (`client.ts`, `socket.ts`, `store.ts`, `api.ts`, `http.ts`, `auth.ts`) |
 | Components | `packages/react-chat/src/components/` |
 | Standalone server | `apps/server/` (`core/`, `accounts/`, legacy `chat/`) |

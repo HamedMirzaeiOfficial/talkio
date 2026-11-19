@@ -13,6 +13,8 @@ See the README quick start. Work on a branch named `<username>/<topic>`; never c
 - Migrations must be additive and backward compatible; check with `makemigrations --check`.
 - Keep business rules in `django_realtime_chat/services/` and state handling in `@realtime-chat/client`; React components stay presentational. Do not duplicate chat logic in `apps/`.
 - Update `docs/api/` whenever a REST or WebSocket contract changes, and add an ADR for architectural decisions.
+- New user-facing text is translated: `t('…')` in `apps/web` (Persian in `src/locales/fa.json`, check with `npm run i18n:check -w @talkio/web`), a `ChatStrings` key in the React library (with its `faStrings` entry), `gettext()` on the server (then `python scripts/i18n.py extract`, fill the `.po`, `compile`, `check`). Use logical CSS (`ps/pe`, `start/end`) so the layout mirrors.
+- Persian copies of the docs live in `docs/fa/` (and the English tutorial in `docs/learn/en/`); update them too when you can, or say so in the pull request.
 - Never commit secrets, local databases, media or build output.
 
 ## Commits

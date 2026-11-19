@@ -1,5 +1,7 @@
 # Backend technical reference
 
+**English** · [فارسی](fa/backend.md)
+
 This document describes how the backend works internally: the reusable package `django_realtime_chat` (`packages/django-chat/src/django_realtime_chat/`) and the standalone server (`apps/server/`). For the public contracts see [api/rest-api.md](api/rest-api.md) and [api/websocket.md](api/websocket.md); for integration see [integration/django.md](integration/django.md).
 
 Contents: [1 Layout](#1-layout) · [2 Configuration](#2-configuration) · [3 Data model](#3-data-model) · [4 Services](#4-services) · [5 Authorization](#5-authorization) · [6 Serialization](#6-serialization) · [7 REST layer](#7-rest-layer) · [8 WebSocket layer](#8-websocket-layer) · [9 Fan-out](#9-fan-out-eventspy) · [10 Presence](#10-presence) · [11 Rate limiting](#11-rate-limiting) · [12 Files and media](#12-files-and-media) · [13 Extension points](#13-extension-points) · [14 Standalone server](#14-standalone-server-appsserver) · [15 Tests](#15-tests) · [16 Error codes](#16-error-codes)
@@ -333,6 +335,7 @@ The client IP for anonymous throttles comes from DRF's `NUM_PROXIES` (`TRUSTED_P
 | `core/asgi.py` | `ProtocolTypeRouter` with Django for HTTP and `chat_websocket_application(WEBSOCKET_ALLOWED_ORIGINS or None)`. |
 | `core/urls.py` | admin, `/api/health/…`, `/api/auth/`, `/api/chat/v1/`, `/api/v1/*` → 410 with a migration hint, social auth; in DEBUG serves static files and **only** `media/avatars/`. |
 | `core/health.py` | Liveness, readiness (database, Redis), `LegacyApiGoneView`. |
+| `core/docs.py` | Documentation viewer in the admin: README, `docs/`, `README.fa.md`; Persian pages (`docs/fa/`, the Persian guide) right-to-left, `docs/learn/en/` left-to-right. |
 | `accounts/models.py` | Legacy custom `User` (`USERNAME_FIELD = "phone"`, phone optional); `VerificationCode`. Usernames generated with `secrets` if missing. |
 | `accounts/managers.py` | `create_user(phone=None, password, username=…)` — phone or username required. |
 | `accounts/authentication.py` | `CustomModelBackend(ModelBackend)` — e-mail (case-insensitive), digits → phone, else username; `user_can_authenticate`; runs the hasher for unknown users to equalize timing. |
@@ -340,6 +343,14 @@ The client IP for anonymous throttles comes from DRF's `NUM_PROXIES` (`TRUSTED_P
 | `accounts/chat_adapter.py` | Null-safe display names; hides handles equal to the phone number. |
 | `accounts/management/commands/seed_demo.py` | Demo users, groups, direct chats, reactions, a generated image (thumbnail path), a reply, a generated sticker pack and a WAV voice note — all through the package services. Refuses with `DEBUG=0` unless `--force`. |
 | `chat/` | Legacy models + migrations only, read-only admin, `import_legacy_chat` (idempotent: deterministic UUIDv5 ids, skips imported rooms, never modifies legacy rows; see ADR 0008). |
+
+## 14.1 Translations
+
+- Every user-facing message is a gettext call: `gettext("Message not found.")`, with `%(name)s` placeholders filled afterwards (`gettext("%(name)s must be positive.") % {"name": name}`). `ChatError.default_message` uses `gettext_lazy`; `ChatError.__init__` resolves the message with `str()` so it is worded in the language active when the error is raised.
+- REST requests get their language from `LocaleMiddleware` (`Accept-Language`). The WebSocket consumer has no middleware: `connection_language(scope)` picks `?lang=`, else the handshake's `Accept-Language`, else `LANGUAGE_CODE`, and each received event is handled under `translation.override`.
+- Catalogs: `packages/django-chat/src/django_realtime_chat/locale/fa/LC_MESSAGES/django.po` (shipped in the wheel, see `package-data`) and `apps/server/locale/fa/LC_MESSAGES/django.po` (`LOCALE_PATHS`). Both `.po` and the compiled `.mo` are in git.
+- `scripts/i18n.py` replaces makemessages/compilemessages without the GNU gettext tools: `extract` finds literal arguments of `gettext`/`gettext_lazy`/`_`/`pgettext` with `ast`, `compile` writes the `.mo`, `check` (CI) fails on untranslated or stale catalogs.
+- Developer-facing messages (system checks, settings errors) stay English on purpose.
 
 ## 15. Tests
 
@@ -350,7 +361,8 @@ The client IP for anonymous throttles comes from DRF's `NUM_PROXIES` (`TRUSTED_P
 | — WebSocket | `test_websocket.py` | `WebsocketCommunicator`; uses `receive_nothing` polling (a timed-out `receive_json_from` cancels the application in asgiref). |
 | — concurrency | `test_concurrency.py` | Real threads on PostgreSQL: direct creation, concurrent member adds, member limit, 60 concurrent sends with retries → gap-free seq. Skipped on SQLite. |
 | — Redis presence | `test_redis_presence.py` | `fakeredis`. |
-| Server | `apps/server/tests/` | Auth flows, CSRF, demo login, profile, integration with `accounts.User`, private storage, 410, ASGI origin check, legacy import, seed, proxy/throttle hardening. |
+| — translations | `test_i18n.py` | Errors in the active language, `connection_language` for sockets. |
+| Server | `apps/server/tests/` | Responses in the `Accept-Language` language (`test_i18n.py`); auth flows, CSRF, demo login, profile, integration with `accounts.User`, private storage, 410, ASGI origin check, legacy import, seed, proxy/throttle hardening. |
 | External host | `examples/django-integration/tests/` | Stock `auth.User`, custom policy, host settings. |
 
 `transaction.on_commit` callbacks do not run inside `TestCase` transactions; tests use `django_capture_on_commit_callbacks(execute=True)` or `transaction=True`.

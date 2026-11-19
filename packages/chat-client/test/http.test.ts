@@ -24,6 +24,16 @@ describe('HttpClient', () => {
     });
   });
 
+  it('sends the current UI language as Accept-Language', async () => {
+    let lang = 'fa';
+    const http = new HttpClient({ baseUrl: 'http://localhost/api', auth: {}, language: () => lang });
+    expect((await http.headersFor('GET', '/x'))['Accept-Language']).toBe('fa');
+    lang = 'en';
+    expect((await http.headersFor('GET', '/x'))['Accept-Language']).toBe('en');
+    const plain = new HttpClient({ baseUrl: 'http://localhost/api', auth: {} });
+    expect(await plain.headersFor('GET', '/x')).not.toHaveProperty('Accept-Language');
+  });
+
   it('adds auth headers per request and never caches the token', async () => {
     let token = 'one';
     const { fetch, calls } = fakeFetch({ 'GET /api/me/': () => ({ ok: true }) });

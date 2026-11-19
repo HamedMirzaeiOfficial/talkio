@@ -70,3 +70,15 @@ def test_admin_has_documentation_link(staff):
     staff_user.is_superuser = True
     staff_user.save()
     assert 'href="/admin/docs/"' in staff.get("/admin/").content.decode()
+
+
+def test_english_guide_and_english_pages_with_a_persian_link_are_ltr(staff):
+    for page in ("docs/learn/en/01-architecture.md", "README.md", "docs/backend.md"):
+        html = staff.get(f"/admin/docs/{page}").content.decode()
+        assert 'dir="rtl"' not in html, page
+
+
+def test_persian_docs_are_rtl_and_listed(staff):
+    html = staff.get("/admin/docs/README.fa.md").content.decode()
+    assert 'dir="rtl"' in html
+    assert "مستندات فارسی" in html and "Learning guide (English)" in html

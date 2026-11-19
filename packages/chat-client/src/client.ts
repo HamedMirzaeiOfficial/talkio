@@ -36,6 +36,11 @@ export interface ChatClientOptions {
   /** How long to wait for a WebSocket ack before retrying a send over HTTP. */
   ackTimeoutMs?: number;
   pageSize?: number;
+  /**
+   * Current UI language (e.g. `() => 'fa'`), sent as Accept-Language on REST requests so error messages
+   * from the server match the interface. Defaults to the browser's own Accept-Language.
+   */
+  language?: () => string | undefined;
 }
 
 export interface SendMessageOptions {
@@ -111,7 +116,12 @@ export function createClientId(): string {
 
 export function createChatClient(options: ChatClientOptions): ChatClient {
   const auth = options.auth ?? sessionAuth();
-  const http = new HttpClient({ baseUrl: options.baseUrl, auth, fetch: options.fetch });
+  const http = new HttpClient({
+    baseUrl: options.baseUrl,
+    auth,
+    fetch: options.fetch,
+    language: options.language,
+  });
   const api = new ChatApi(http);
   const store = new ChatStore();
   const emitter = new Emitter<ClientEvents>();
@@ -124,12 +134,21 @@ export function createChatClient(options: ChatClientOptions): ChatClient {
     WebSocket: options.WebSocket,
     reconnect: options.reconnect,
     requestTimeoutMs: ackTimeoutMs,
-    resolveUrl: auth.useSocketTicket
-      ? async (url) => {
-          const { ticket } = await api.socketTicket();
-          return `${url}${url.includes('?') ? '&' : '?'}ticket=${encodeURIComponent(ticket)}`;
-        }
-      : undefined,
+    // Resolved on every (re)connect: a fresh ticket if the auth needs one, and the current UI language
+    // (`?lang=`) so error messages sent over the socket match the interface.
+    resolveUrl:
+      auth.useSocketTicket || options.language
+        ? async (url) => {
+            const params: string[] = [];
+            const language = options.language?.();
+            if (language) params.push(`lang=${encodeURIComponent(language)}`);
+            if (auth.useSocketTicket) {
+              const { ticket } = await api.socketTicket();
+              params.push(`ticket=${encodeURIComponent(ticket)}`);
+            }
+            return params.length ? `${url}${url.includes('?') ? '&' : '?'}${params.join('&')}` : url;
+          }
+        : undefined,
   });
 
   let disposed = false;

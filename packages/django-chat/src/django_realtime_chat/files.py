@@ -11,6 +11,8 @@ import os
 import re
 import unicodedata
 
+from django.utils.translation import gettext
+
 HEADER_BYTES = 64
 
 
@@ -125,9 +127,9 @@ def image_dimensions(upload) -> tuple[int | None, int | None]:
             image.verify()
             width, height = image.size
     except Exception as exc:
-        raise ValueError("The file is not a valid image.") from exc
+        raise ValueError(gettext("The file is not a valid image.")) from exc
     finally:
         upload.seek(0)
     if width * height > 80_000_000:  # decompression-bomb guard
-        raise ValueError("The image is too large.")
+        raise ValueError(gettext("The image is too large."))
     return width, height

@@ -12,6 +12,7 @@ from django.db import IntegrityError, transaction
 from django.db.models import F
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
+from django.utils.translation import gettext
 
 from .. import events, signals
 from ..conf import chat_settings
@@ -35,11 +36,12 @@ def normalize_body(body: Any) -> str:
     if body is None:
         return ""
     if not isinstance(body, str):
-        raise ValidationFailed("body must be a string.", code="invalid_body")
+        raise ValidationFailed(gettext("body must be a string."), code="invalid_body")
     body = _BIDI_CONTROLS.sub("", body.replace("\r\n", "\n").replace("\x00", "")).strip()
     if len(body) > chat_settings.MAX_MESSAGE_LENGTH:
         raise ValidationFailed(
-            f"Messages are limited to {chat_settings.MAX_MESSAGE_LENGTH} characters.",
+            gettext("Messages are limited to %(max_message_length)s characters.")
+            % {"max_message_length": chat_settings.MAX_MESSAGE_LENGTH},
             code="message_too_long",
             details={"max_length": chat_settings.MAX_MESSAGE_LENGTH},
         )
@@ -51,7 +53,9 @@ def normalize_client_id(client_id: Any) -> str:
         return uuid.uuid4().hex
     client_id = str(client_id)
     if not CLIENT_ID_RE.match(client_id):
-        raise ValidationFailed("client_id must be 1-64 URL-safe characters.", code="invalid_client_id")
+        raise ValidationFailed(
+            gettext("client_id must be 1-64 URL-safe characters."), code="invalid_client_id"
+        )
     return client_id
 
 
@@ -62,11 +66,11 @@ def _get_message(user: Any, message_id: Any, *, for_update: bool = False) -> tup
     try:
         message = qs.get(pk=message_id)
     except (Message.DoesNotExist, ValueError, DjangoValidationError) as exc:
-        raise NotFound("Message not found.") from exc
+        raise NotFound(gettext("Message not found.")) from exc
     try:
         membership = get_membership(user, message.conversation_id)
     except NotFound as exc:
-        raise NotFound("Message not found.") from exc
+        raise NotFound(gettext("Message not found.")) from exc
     return message, membership
 
 
@@ -101,7 +105,7 @@ def forward_message(
 ) -> tuple[Message, bool]:
     source, _ = _get_message(user, message_id)
     if source.deleted_at:
-        raise ValidationFailed("Deleted messages cannot be forwarded.", code="message_deleted")
+        raise ValidationFailed(gettext("Deleted messages cannot be forwarded."), code="message_deleted")
     target = get_membership(user, target_conversation_id)
     return _create(
         user, target, body=source.body, client_id=client_id, forwarded_from=source, sticker=source.sticker
@@ -125,21 +129,21 @@ def _create(
     if existing is not None:
         return existing, False
     if not get_policy().can_send_message(user, conv, membership):
-        raise PermissionDenied("You cannot send messages in this conversation.")
+        raise PermissionDenied(gettext("You cannot send messages in this conversation."))
     body = normalize_body(body)
     attachment_ids = _attachment_ids(attachment_ids)
     copy_from = list(forwarded_from.attachments.all()) if forwarded_from is not None else []
     if sticker is not None and (body or attachment_ids):
-        raise ValidationFailed("A sticker is sent on its own.", code="invalid_sticker")
+        raise ValidationFailed(gettext("A sticker is sent on its own."), code="invalid_sticker")
     if not body and not attachment_ids and not copy_from and sticker is None:
-        raise ValidationFailed("A message needs text or an attachment.", code="empty_message")
+        raise ValidationFailed(gettext("A message needs text or an attachment."), code="empty_message")
     reply_to = None
     if reply_to_id:
         try:
             reply_to = Message.objects.get(pk=reply_to_id, conversation=conv)
         except (Message.DoesNotExist, ValueError, DjangoValidationError) as exc:
             raise ValidationFailed(
-                "The replied message is not in this conversation.", code="invalid_reply"
+                gettext("The replied message is not in this conversation."), code="invalid_reply"
             ) from exc
 
     now = timezone.now()
@@ -197,12 +201,12 @@ def _attachment_ids(value: Any) -> list[str]:
     if not value:
         return []
     if not isinstance(value, (list, tuple)):
-        raise ValidationFailed("attachment_ids must be a list.", code="invalid_attachments")
+        raise ValidationFailed(gettext("attachment_ids must be a list."), code="invalid_attachments")
     if not chat_settings.ENABLE_ATTACHMENTS:
-        raise FeatureDisabled("Attachments are disabled.")
+        raise FeatureDisabled(gettext("Attachments are disabled."))
     ids = list(dict.fromkeys(str(v) for v in value))
     if len(ids) > chat_settings.MAX_ATTACHMENTS_PER_MESSAGE:
-        raise ValidationFailed("Too many attachments.", code="too_many_attachments")
+        raise ValidationFailed(gettext("Too many attachments."), code="too_many_attachments")
     return ids
 
 
@@ -214,10 +218,11 @@ def _bind_attachments(user: Any, conv: Conversation, message: Message, ids: list
             )
         )
     except (ValueError, DjangoValidationError) as exc:
-        raise ValidationFailed("Invalid attachment id.", code="invalid_attachments") from exc
+        raise ValidationFailed(gettext("Invalid attachment id."), code="invalid_attachments") from exc
     if len(rows) != len(ids):
         raise ValidationFailed(
-            "Attachments must be your own pending uploads in this conversation.", code="invalid_attachments"
+            gettext("Attachments must be your own pending uploads in this conversation."),
+            code="invalid_attachments",
         )
     Attachment.objects.filter(pk__in=[r.pk for r in rows]).update(message=message)
 
@@ -231,9 +236,11 @@ def _int_param(value: Any, name: str) -> int | None:
     try:
         parsed = int(value)
     except (TypeError, ValueError) as exc:
-        raise ValidationFailed(f"{name} must be an integer.", code="invalid_cursor") from exc
+        raise ValidationFailed(
+            gettext("%(name)s must be an integer.") % {"name": name}, code="invalid_cursor"
+        ) from exc
     if parsed < 0:
-        raise ValidationFailed(f"{name} must be positive.", code="invalid_cursor")
+        raise ValidationFailed(gettext("%(name)s must be positive.") % {"name": name}, code="invalid_cursor")
     return parsed
 
 
@@ -259,7 +266,7 @@ def list_messages(
     qs = message_queryset().filter(conversation_id=membership.conversation_id)
     before, after = _int_param(before, "before"), _int_param(after, "after")
     if before is not None and after is not None:
-        raise ValidationFailed("Use either before or after.", code="invalid_cursor")
+        raise ValidationFailed(gettext("Use either before or after."), code="invalid_cursor")
 
     if pinned:
         rows = list(
@@ -269,7 +276,9 @@ def list_messages(
     if updated_since:
         moment = parse_datetime(str(updated_since)) if isinstance(updated_since, str) else updated_since
         if not isinstance(moment, datetime):
-            raise ValidationFailed("updated_since must be an ISO 8601 timestamp.", code="invalid_cursor")
+            raise ValidationFailed(
+                gettext("updated_since must be an ISO 8601 timestamp."), code="invalid_cursor"
+            )
         rows = list(qs.filter(updated_at__gt=moment).order_by("updated_at", "seq")[: MAX_PAGE_SIZE * 2 + 1])
         has_more = len(rows) > MAX_PAGE_SIZE * 2
         rows = rows[: MAX_PAGE_SIZE * 2]
@@ -294,7 +303,9 @@ def search_messages(
 ) -> dict[str, Any]:
     query = str(query or "").strip()
     if not 2 <= len(query) <= 100:
-        raise ValidationFailed("Search must contain between 2 and 100 characters.", code="invalid_query")
+        raise ValidationFailed(
+            gettext("Search must contain between 2 and 100 characters."), code="invalid_query"
+        )
     qs = message_queryset().filter(
         conversation__memberships__user=user,
         conversation__memberships__left_at__isnull=True,
@@ -307,7 +318,7 @@ def search_messages(
     if before:
         moment = parse_datetime(str(before))
         if moment is None:
-            raise ValidationFailed("Invalid cursor.", code="invalid_cursor")
+            raise ValidationFailed(gettext("Invalid cursor."), code="invalid_cursor")
         qs = qs.filter(created_at__lt=moment)
     rows = list(qs.order_by("-created_at", "-seq")[:31])
     has_more = len(rows) > 30
@@ -326,15 +337,15 @@ def edit_message(user: Any, message_id: Any, body: Any) -> Message:
     with transaction.atomic():
         message, membership = _get_message(user, message_id, for_update=True)
         if message.deleted_at:
-            raise ValidationFailed("Deleted messages cannot be edited.", code="message_deleted")
+            raise ValidationFailed(gettext("Deleted messages cannot be edited."), code="message_deleted")
         if not get_policy().can_edit_message(user, message, membership):
-            raise PermissionDenied("Only the sender can edit this message.")
+            raise PermissionDenied(gettext("Only the sender can edit this message."))
         window = chat_settings.EDIT_WINDOW
         if window and timezone.now() - message.created_at > timedelta(seconds=window):
-            raise PermissionDenied("The edit window has passed.", code="edit_window_expired")
+            raise PermissionDenied(gettext("The edit window has passed."), code="edit_window_expired")
         body = normalize_body(body)
         if not body and not message.attachments.exists():
-            raise ValidationFailed("A message needs text or an attachment.", code="empty_message")
+            raise ValidationFailed(gettext("A message needs text or an attachment."), code="empty_message")
         if body != message.body:
             message.body = body
             message.edited_at = timezone.now()
@@ -356,7 +367,7 @@ def delete_message(user: Any, message_id: Any) -> Message:
         if message.deleted_at:
             return message_queryset().get(pk=message.pk)
         if not get_policy().can_delete_message(user, message, membership):
-            raise PermissionDenied("You cannot delete this message.")
+            raise PermissionDenied(gettext("You cannot delete this message."))
         attachments = list(message.attachments.all())
         message.body = ""
         message.deleted_at = timezone.now()
@@ -378,15 +389,15 @@ def delete_message(user: Any, message_id: Any) -> Message:
 
 def toggle_reaction(user: Any, message_id: Any, emoji: Any) -> dict[str, Any]:
     if not chat_settings.ENABLE_REACTIONS:
-        raise FeatureDisabled("Reactions are disabled.")
+        raise FeatureDisabled(gettext("Reactions are disabled."))
     emoji = str(emoji or "").strip()
     allowed = chat_settings.ALLOWED_REACTIONS
     if (allowed is not None and emoji not in allowed) or not is_emoji(emoji, max_length=32):
-        raise ValidationFailed("This reaction is not supported.", code="invalid_reaction")
+        raise ValidationFailed(gettext("This reaction is not supported."), code="invalid_reaction")
     with transaction.atomic():
         message, _ = _get_message(user, message_id, for_update=True)
         if message.deleted_at:
-            raise ValidationFailed("Deleted messages cannot be reacted to.", code="message_deleted")
+            raise ValidationFailed(gettext("Deleted messages cannot be reacted to."), code="message_deleted")
         removed, _ = Reaction.objects.filter(message=message, user=user, emoji=emoji).delete()
         active = not removed
         if active:
@@ -405,9 +416,9 @@ def toggle_pin(user: Any, message_id: Any) -> Message:
     with transaction.atomic():
         message, membership = _get_message(user, message_id, for_update=True)
         if message.deleted_at:
-            raise ValidationFailed("Deleted messages cannot be pinned.", code="message_deleted")
+            raise ValidationFailed(gettext("Deleted messages cannot be pinned."), code="message_deleted")
         if not get_policy().can_pin_message(user, message, membership):
-            raise PermissionDenied("You cannot pin messages in this conversation.")
+            raise PermissionDenied(gettext("You cannot pin messages in this conversation."))
         if message.pinned_at:
             message.pinned_at, message.pinned_by = None, None
         else:

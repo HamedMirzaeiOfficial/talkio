@@ -1,5 +1,7 @@
 # فصل ۴ — ارتباط بلادرنگ: ASGI، Channels و طراحی پروتکل
 
+[English](en/04-realtime.md) · **فارسی**
+
 فایل‌های این فصل: `apps/server/core/asgi.py`، `ws/consumer.py`، `ws/middleware.py`، `events.py`، `presence.py`، `services/presence.py`، [websocket.md](../api/websocket.md)
 
 ## ۱. WSGI در برابر ASGI

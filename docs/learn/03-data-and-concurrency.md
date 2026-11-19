@@ -1,5 +1,7 @@
 # فصل ۳ — داده، تراکنش و همزمانی
 
+[English](en/03-data-and-concurrency.md) · **فارسی**
+
 فایل‌های این فصل: `models.py`، `services/messages.py`، `services/conversations.py`، `events.py`، `tests/test_concurrency.py`
 
 این مهم‌ترین فصل بک‌اند است. بیشتر باگ‌های سخت سیستم‌های چت از همزمانی می‌آیند: دو درخواست در یک لحظه.

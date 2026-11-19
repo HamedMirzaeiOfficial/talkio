@@ -32,4 +32,6 @@ export default tseslint.config(
     },
   },
   { files: ['**/test/**', '**/e2e/**'], rules: { '@typescript-eslint/no-explicit-any': 'off' } },
+  // Node scripts (e.g. apps/web/scripts/i18n-check.mjs).
+  { files: ['**/scripts/**/*.{js,mjs}'], languageOptions: { globals: globals.node } },
 );

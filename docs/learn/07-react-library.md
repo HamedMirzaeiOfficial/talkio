@@ -1,5 +1,7 @@
 # فصل ۷ — React و کتابخانه‌ی کامپوننت
 
+[English](en/07-react-library.md) · **فارسی**
+
 فایل‌های این فصل: `packages/react-chat/src/{context.tsx,hooks.ts}`، `components/MessageList.tsx`، `components/MessageComposer.tsx`، `components/MessageBubble.tsx`، `components/primitives.tsx`
 
 ## ۱. اتصال store به React: `useSyncExternalStore`

@@ -1,5 +1,7 @@
 # Integrating `django-realtime-chat` into an existing Django project
 
+**English** · [فارسی](../fa/integration-django.md)
+
 A complete working example lives in [`examples/django-integration`](../../examples/django-integration) (stock `django.contrib.auth.User`, a custom policy, private storage, tests).
 
 ## 1. Install
@@ -31,6 +33,15 @@ CHAT_REDIS_URL = REDIS_URL
 ```
 
 Then `python manage.py migrate`.
+
+**Language.** The package ships English and Persian messages (`locale/fa/`, standard gettext catalogs). To answer in the client's language, enable Django's locale middleware and list the languages you support:
+
+```python
+MIDDLEWARE.insert(MIDDLEWARE.index("django.middleware.common.CommonMiddleware"), "django.middleware.locale.LocaleMiddleware")
+LANGUAGES = [("en", "English"), ("fa", "فارسی")]
+```
+
+REST errors then follow `Accept-Language`; WebSocket errors follow `?lang=` on the socket URL (sent by the SDK's `language` option) or the handshake's `Accept-Language`. Your own project can override any message by putting the same msgid in a catalog under `LOCALE_PATHS`, which Django searches first.
 
 ## 3. URLs and ASGI
 

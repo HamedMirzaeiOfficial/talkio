@@ -1,6 +1,7 @@
 import { ArrowLeft } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { t } from '../lib/i18n';
 
 export function Page({ title, children, back }: { title: string; children: ReactNode; back?: boolean }) {
   const navigate = useNavigate();
@@ -10,7 +11,7 @@ export function Page({ title, children, back }: { title: string; children: React
         {back && (
           <button
             type="button"
-            aria-label="Back"
+            aria-label={t('Back')}
             onClick={() => navigate(-1)}
             className="grid size-8 place-items-center rounded-ui text-muted hover:bg-surface-2 hover:text-fg"
           >

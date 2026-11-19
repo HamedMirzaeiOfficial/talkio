@@ -14,6 +14,8 @@ export interface HttpClientOptions {
   auth: AuthAdapter;
   fetch?: typeof fetch;
   timeoutMs?: number;
+  /** Current UI language, sent as Accept-Language so server messages match the interface. */
+  language?: () => string | undefined;
 }
 
 /** Resolve a possibly relative URL against the page (browser) or throw (non-browser). */
@@ -28,12 +30,14 @@ export class HttpClient {
   private readonly auth: AuthAdapter;
   private readonly fetchImpl: typeof fetch;
   private readonly timeoutMs: number;
+  private readonly language: (() => string | undefined) | undefined;
 
   constructor(options: HttpClientOptions) {
     this.baseUrl = options.baseUrl.replace(/\/+$/, '');
     this.auth = options.auth;
     this.fetchImpl = options.fetch ?? ((...args) => fetch(...args));
     this.timeoutMs = options.timeoutMs ?? 20_000;
+    this.language = options.language;
   }
 
   url(path: string, query?: RequestOptions['query']): string {
@@ -54,7 +58,10 @@ export class HttpClient {
   }
 
   async headersFor(method: string, url: string): Promise<Record<string, string>> {
-    return { Accept: 'application/json', ...((await this.auth.getHeaders?.({ method, url })) ?? {}) };
+    const headers: Record<string, string> = { Accept: 'application/json' };
+    const language = this.language?.();
+    if (language) headers['Accept-Language'] = language;
+    return { ...headers, ...((await this.auth.getHeaders?.({ method, url })) ?? {}) };
   }
 
   async request<T>(path: string, options: RequestOptions = {}): Promise<T> {

@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 
-import { Logo } from '../components/ui';
+import { LangSwitch, Logo } from '../components/ui';
+import { t } from '../lib/i18n';
 
 export function AuthLayout({
   title,
@@ -16,10 +17,11 @@ export function AuthLayout({
 }) {
   return (
     <div className="flex min-h-full flex-col bg-bg">
-      <header className="px-6 py-5">
-        <Link to="/" aria-label="Talkio home">
+      <header className="flex items-center justify-between px-6 py-5">
+        <Link to="/" aria-label={t('Talkio home')}>
           <Logo />
         </Link>
+        <LangSwitch />
       </header>
       <main className="flex flex-1 items-start justify-center px-4 pt-[6vh] pb-16">
         <div className="w-full max-w-[400px]">

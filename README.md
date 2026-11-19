@@ -2,6 +2,8 @@
 
 <h1 align="center">Talkio</h1>
 
+<p align="center"><b>English</b> · <a href="README.fa.md">فارسی</a></p>
+
 Real-time messaging built from reusable parts:
 
 | Part | What it is |
@@ -106,6 +108,7 @@ All images are captured from the running app by [`apps/web/e2e/screenshots.spec.
 - Rate limits on HTTP and WebSocket operations; origin-validated sockets; CSRF-protected session auth
 - Emoji rendered from the open Twemoji set (identical on every OS, no missing-font boxes), with skin tones, recents and large emoji-only messages
 - RTL/automatic direction (Persian, Arabic), keyboard navigation and shortcuts, reduced motion, dark and light themes
+- **English and Persian interface**: the app, the chat components (`faStrings`), server error messages (gettext catalogs shipped in the package) and socket errors follow the chosen language, with a full right-to-left layout and Persian digits and dates; CI fails when a string has no translation
 - Embeddable `<ChatWidget/>` with style isolation, theme tokens and host-controlled auth
 
 ## Architecture
@@ -193,7 +196,7 @@ Ticks show delivery: 🕓 sending, ✓ sent, ✓✓ read by someone.
 
 ### Settings and profile
 
-- **Settings** (gear icon, <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>,</kbd>): theme (system / light / dark), Enter-to-send, compact messages, desktop notifications, keyboard shortcut list, sign out.
+- **Settings** (gear icon, <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>,</kbd>): language (English / فارسی; also on the landing and sign-in pages), theme (system / light / dark), Enter-to-send, compact messages, desktop notifications, keyboard shortcut list, sign out.
 - **Profile** (your avatar): name, username, e-mail, photo and password. Click a member in a group to see their profile and message them.
 - The page title shows your unread count. With notifications on, you get a desktop notification when a message arrives while the tab is in the background.
 
@@ -209,7 +212,8 @@ When the server is running, all documentation is available **inside the admin** 
 | --- | --- |
 | [Backend technical reference](docs/backend.md) | Package internals: models, services, transactions, WebSocket consumer, presence, rate limits, files, server modules |
 | [Frontend technical reference](docs/frontend.md) | SDK state machine and store, React library, styling isolation, media, web app |
-| [Learning guide (Persian)](docs/learn/README.md) | 12 chapters explaining the concepts behind the code, with the real bugs found while building it and exercises |
+| Learning guide: [English](docs/learn/en/README.md) · [فارسی](docs/learn/README.md) | 13 chapters explaining the concepts behind the code, with the real bugs found while building it and exercises |
+| [Persian documentation (مستندات فارسی)](docs/fa/README.md) | The main documents above, in Persian |
 | [REST API](docs/api/rest-api.md) · [WebSocket protocol](docs/api/websocket.md) · [Migration from v1](docs/api/migration-from-v1.md) | Contracts |
 | [Django integration](docs/integration/django.md) · [React & SDK integration](docs/integration/react.md) | Embedding in other projects |
 | [Architecture overview](docs/architecture/overview.md) · [Decisions (ADR)](docs/architecture/decisions/) · [Design system](docs/design-system.md) | Design |
@@ -259,6 +263,7 @@ The package uses the host's authentication (DRF classes; session or signed singl
 | Server tests | `cd apps/server && DEBUG=1 pytest` |
 | Lint Python | `ruff check . && ruff format --check .` (per project) |
 | JS lint / format / typecheck / unit tests | `npm run lint`, `npm run format:check`, `npm run typecheck`, `npm test` |
+| Translations (app strings; server and package catalogs) | `npm run i18n:check -w @talkio/web`; `python scripts/i18n.py extract \| compile \| check` |
 | Build everything | `npm run build` and `cd packages/django-chat && python -m build` |
 | End-to-end (servers running) | `cd apps/web && npx playwright test --project=desktop --project=mobile --project=example` |
 | Verify installable packages (wheel + npm tarballs in clean environments) | `./scripts/verify-packages.sh` |
@@ -267,7 +272,7 @@ CI (`.github/workflows/ci.yml`) runs the package on Django 4.2 and 5.2 (SQLite a
 
 ### Test status at the time of writing
 
-Run locally on 2026-11-19: Django package 106 passed on Django 5.2 and on 4.2 (1 PostgreSQL-only concurrency test skipped on SQLite), server 17, Django example 4, SDK 25, React library 26, web app 2, Playwright 15 (desktop, mobile, phone + code sign-in, emoji/stickers/voice with a synthetic microphone, and the embedded widget). `scripts/verify-packages.sh` passed. The CI workflow has not been run on GitHub yet.
+Run locally on 2026-11-19 after the bilingual release: Django package 121 passed on Django 5.2 (5 PostgreSQL/Redis-only tests skipped on SQLite), server 33, SDK 26, React library 29, web app 5. Earlier the same day: Django example 4, Playwright 15 (desktop, mobile, phone + code sign-in, emoji/stickers/voice with a synthetic microphone, and the embedded widget). `scripts/verify-packages.sh` passed. The CI workflow has not been run on GitHub yet.
 
 ## Known limitations
 
@@ -276,6 +281,7 @@ Run locally on 2026-11-19: Django package 106 passed on Django 5.2 and on 4.2 (1
 - The composer's text box shows emoji with the device's own font (images are used everywhere else); devices without a color-emoji font show plain glyphs while typing.
 - Emoji newer than the bundled Twemoji release (Unicode 15.1+) are hidden from the picker.
 - Sends within one conversation are serialized by a row lock (see ADR 0003); no throughput figures are claimed.
+- The language of socket error messages is chosen when the socket connects; after switching language it changes on the next reconnect.
 - Packages are not published to PyPI/npm, and no license has been chosen yet — the owner should pick one before publishing.
 
 ## Roadmap

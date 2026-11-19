@@ -13,12 +13,12 @@ export interface PresenceIndicatorProps {
 
 export function PresenceIndicator({ userId, showLabel = true, className }: PresenceIndicatorProps) {
   const { online, last_seen_at } = usePresence(userId);
-  const { strings } = useChatContext();
+  const { strings, locale } = useChatContext();
   const now = useNow(60_000, !online);
   const label = online
     ? strings.online
     : last_seen_at
-      ? `${strings.lastSeen} ${formatRelative(last_seen_at, now)}`
+      ? `${strings.lastSeen} ${formatRelative(last_seen_at, now, locale, strings.aWhileAgo)}`
       : strings.offline;
   return (
     <span className={cx('rc:inline-flex rc:items-center rc:gap-1.5 rc:text-[13px] rc:text-muted', className)}>

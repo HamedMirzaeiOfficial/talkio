@@ -1,5 +1,7 @@
 # Deployment
 
+**English** · [فارسی](fa/deployment.md)
+
 The standalone product is one ASGI service (Django + Channels on Daphne), PostgreSQL, Redis, private file storage, and the static web build. Nothing here has been load-tested; size infrastructure from your own measurements (`scripts/load_test.js` is a k6 starting point).
 
 ```mermaid
@@ -38,6 +40,7 @@ Serve `apps/web/dist` as static files with an SPA fallback to `index.html`, and 
 | `TRUST_X_FORWARDED_PROTO=1` | When TLS terminates at a proxy that sets `X-Forwarded-Proto`. |
 | `SECURE_SSL_REDIRECT=1` | If the proxy does not redirect HTTP→HTTPS itself. |
 | `PRIVATE_MEDIA_ROOT`, `MEDIA_ROOT` | Persistent volumes. |
+| `LANGUAGE_CODE` | Default language of server messages when a client asks for none (`en` or `fa`). |
 
 Run `python manage.py check --deploy` — it also reports chat configuration problems (`realtime_chat.*`).
 

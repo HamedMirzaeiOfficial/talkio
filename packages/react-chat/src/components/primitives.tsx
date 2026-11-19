@@ -7,6 +7,8 @@ import { forwardRef } from 'react';
 
 import { useChatContext, useThemeRoot } from '../context.js';
 import { cx } from '../utils.js';
+import { useOptionalChatContext } from '../context.js';
+import { defaultStrings } from '../strings.js';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
@@ -106,10 +108,11 @@ export const TextInput = forwardRef<
 });
 
 export function Spinner({ label }: { label?: string }) {
+  const context = useOptionalChatContext();
   return (
     <span role="status" className="rc:inline-flex rc:items-center rc:gap-2 rc:text-[13px] rc:text-muted">
       <Loader2 className="rc:size-4 rc:animate-spin" aria-hidden />
-      {label ?? <span className="rc:sr-only">Loading</span>}
+      {label ?? <span className="rc:sr-only">{context?.strings.loading ?? defaultStrings.loading}</span>}
     </span>
   );
 }

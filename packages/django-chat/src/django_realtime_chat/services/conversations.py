@@ -11,6 +11,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError, transaction
 from django.db.models import Q
 from django.utils import timezone
+from django.utils.translation import gettext
 
 from .. import events, signals
 from ..conf import chat_settings
@@ -34,7 +35,7 @@ def get_membership(user: Any, conversation_id: Any, *, for_update: bool = False)
         return qs.get(conversation_id=conversation_id, user=user, left_at__isnull=True)
     except (Membership.DoesNotExist, ValueError, TypeError, DjangoValidationError) as exc:
         # Malformed UUIDs raise ValidationError; treat them like unknown ids.
-        raise NotFound("Conversation not found.") from exc
+        raise NotFound(gettext("Conversation not found.")) from exc
 
 
 def active_conversation_ids(user: Any) -> list[str]:
@@ -57,7 +58,7 @@ def list_conversations(
     qs = conversation_queryset_for(user).order_by("-last_activity_at", "-id")
     if kind:
         if kind not in Conversation.Kind.values:
-            raise ValidationFailed("Unknown conversation kind.", code="invalid_kind")
+            raise ValidationFailed(gettext("Unknown conversation kind."), code="invalid_kind")
         qs = qs.filter(kind=kind)
     if query:
         qs = qs.filter(
@@ -70,7 +71,7 @@ def list_conversations(
             moment = datetime.fromisoformat(stamp)
             uuid.UUID(cursor_id)
         except ValueError as exc:
-            raise ValidationFailed("Invalid cursor.", code="invalid_cursor") from exc
+            raise ValidationFailed(gettext("Invalid cursor."), code="invalid_cursor") from exc
         qs = qs.filter(Q(last_activity_at__lt=moment) | Q(last_activity_at=moment, id__lt=cursor_id))
     limit = max(1, min(limit, 100))
     rows = list(qs[: limit + 1])
@@ -96,28 +97,30 @@ def get_conversation(user: Any, conversation_id: Any) -> dict[str, Any]:
 
 def _resolve_users(user: Any, user_ids: Any) -> list[Any]:
     if not isinstance(user_ids, (list, tuple)) or any(isinstance(i, (dict, list)) for i in user_ids):
-        raise ValidationFailed("member_ids must be a list of user ids.", code="invalid_members")
+        raise ValidationFailed(gettext("member_ids must be a list of user ids."), code="invalid_members")
     cleaned = [clean_user_id(i) for i in user_ids]
     if any(c is None for c in cleaned):
-        raise ValidationFailed("One or more users cannot be added.", code="invalid_members")
+        raise ValidationFailed(gettext("One or more users cannot be added."), code="invalid_members")
     wanted = {c for c in cleaned if str(c) != str(user.pk)}
     if not wanted:
         return []
     found = list(get_policy().user_queryset(user).filter(pk__in=list(wanted)))
     if len(found) != len(wanted):
         # Same error whether the user does not exist or is not discoverable.
-        raise ValidationFailed("One or more users cannot be added.", code="invalid_members")
+        raise ValidationFailed(gettext("One or more users cannot be added."), code="invalid_members")
     return found
 
 
 def start_direct(user: Any, other_user_id: Any) -> tuple[Conversation, bool]:
     others = _resolve_users(user, [other_user_id])
     if len(others) != 1:
-        raise ValidationFailed("Choose another user for a direct conversation.", code="invalid_members")
+        raise ValidationFailed(
+            gettext("Choose another user for a direct conversation."), code="invalid_members"
+        )
     other = others[0]
     policy = get_policy()
     if not policy.can_start_direct(user, other):
-        raise PermissionDenied("You cannot message this user.")
+        raise PermissionDenied(gettext("You cannot message this user."))
     low, high = sorted([str(user.pk), str(other.pk)], key=lambda v: (len(v), v))
     key = f"{low}:{high}"
     existing = Conversation.objects.filter(direct_key=key).first()
@@ -147,14 +150,14 @@ def _reactivate(conv: Conversation, users: list[Any]) -> None:
 def create_group(user: Any, *, title: str, member_ids: Any, description: str = "") -> Conversation:
     policy = get_policy()
     if not chat_settings.ENABLE_GROUPS:
-        raise FeatureDisabled("Group conversations are disabled.")
+        raise FeatureDisabled(gettext("Group conversations are disabled."))
     if not policy.can_create_group(user):
-        raise PermissionDenied("You cannot create groups.")
+        raise PermissionDenied(gettext("You cannot create groups."))
     title = _clean_title(title)
     description = _clean_description(description)
     members = _resolve_users(user, member_ids)
     if len(members) + 1 > chat_settings.MAX_GROUP_MEMBERS:
-        raise ValidationFailed("Too many members.", code="too_many_members")
+        raise ValidationFailed(gettext("Too many members."), code="too_many_members")
     with transaction.atomic():
         conv = Conversation.objects.create(
             kind=Conversation.Kind.GROUP, title=title, description=description, created_by=user
@@ -177,16 +180,16 @@ def _announce_new(conv: Conversation, actor: Any, user_ids: list[Any]) -> None:
 def _clean_title(title: Any) -> str:
     title = str(title or "").strip()
     if not title:
-        raise ValidationFailed("A group name is required.", code="invalid_title")
+        raise ValidationFailed(gettext("A group name is required."), code="invalid_title")
     if len(title) > chat_settings.MAX_TITLE_LENGTH:
-        raise ValidationFailed("The group name is too long.", code="invalid_title")
+        raise ValidationFailed(gettext("The group name is too long."), code="invalid_title")
     return title
 
 
 def _clean_description(description: Any) -> str:
     description = str(description or "").strip()
     if len(description) > 500:
-        raise ValidationFailed("The description is too long.", code="invalid_description")
+        raise ValidationFailed(gettext("The description is too long."), code="invalid_description")
     return description
 
 
@@ -195,7 +198,7 @@ def update_conversation(user: Any, conversation_id: Any, data: dict[str, Any]) -
         membership = get_membership(user, conversation_id, for_update=True)
         conv = membership.conversation
         if not get_policy().can_edit_conversation(user, conv, membership):
-            raise PermissionDenied("You cannot edit this conversation.")
+            raise PermissionDenied(gettext("You cannot edit this conversation."))
         fields = []
         if "title" in data:
             conv.title = _clean_title(data["title"])
@@ -214,10 +217,10 @@ def add_members(user: Any, conversation_id: Any, user_ids: Any) -> list[Any]:
         membership = get_membership(user, conversation_id, for_update=True)
         conv = membership.conversation
         if not get_policy().can_add_members(user, conv, membership):
-            raise PermissionDenied("You cannot add members to this conversation.")
+            raise PermissionDenied(gettext("You cannot add members to this conversation."))
         new_users = _resolve_users(user, user_ids)
         if not new_users:
-            raise ValidationFailed("Choose at least one user.", code="invalid_members")
+            raise ValidationFailed(gettext("Choose at least one user."), code="invalid_members")
         existing = {
             m.user_id: m
             for m in Membership.objects.select_for_update().filter(conversation=conv, user__in=new_users)
@@ -225,7 +228,7 @@ def add_members(user: Any, conversation_id: Any, user_ids: Any) -> list[Any]:
         active_count = Membership.objects.filter(conversation=conv, left_at__isnull=True).count()
         added = [u for u in new_users if u.pk not in existing or existing[u.pk].left_at is not None]
         if active_count + len(added) > chat_settings.MAX_GROUP_MEMBERS:
-            raise ValidationFailed("Too many members.", code="too_many_members")
+            raise ValidationFailed(gettext("Too many members."), code="too_many_members")
         now = timezone.now()
         for target in added:
             if target.pk in existing:
@@ -260,9 +263,9 @@ def remove_member(user: Any, conversation_id: Any, target_user_id: Any) -> None:
                 conversation=conv, user_id=_target_id(target_user_id), left_at__isnull=True
             )
         except (Membership.DoesNotExist, ValueError, DjangoValidationError) as exc:
-            raise NotFound("Member not found.") from exc
+            raise NotFound(gettext("Member not found.")) from exc
         if not get_policy().can_remove_member(user, conv, membership, target):
-            raise PermissionDenied("You cannot remove this member.")
+            raise PermissionDenied(gettext("You cannot remove this member."))
         target.left_at = timezone.now()
         was_owner = target.role == Membership.Role.OWNER
         target.role = Membership.Role.MEMBER
@@ -287,7 +290,7 @@ def remove_member(user: Any, conversation_id: Any, target_user_id: Any) -> None:
 def _target_id(value: Any) -> Any:
     cleaned = clean_user_id(value)
     if cleaned is None:
-        raise NotFound("Member not found.")
+        raise NotFound(gettext("Member not found."))
     return cleaned
 
 
@@ -302,7 +305,7 @@ def _transfer_ownership(conv: Conversation) -> None:
 
 def change_role(user: Any, conversation_id: Any, target_user_id: Any, role: Any) -> Membership:
     if role not in {Membership.Role.ADMIN, Membership.Role.MEMBER, Membership.Role.OWNER}:
-        raise ValidationFailed("Unknown role.", code="invalid_role")
+        raise ValidationFailed(gettext("Unknown role."), code="invalid_role")
     with transaction.atomic():
         membership = get_membership(user, conversation_id, for_update=True)
         conv = membership.conversation
@@ -311,9 +314,9 @@ def change_role(user: Any, conversation_id: Any, target_user_id: Any, role: Any)
                 conversation=conv, user_id=_target_id(target_user_id), left_at__isnull=True
             )
         except (Membership.DoesNotExist, ValueError, DjangoValidationError) as exc:
-            raise NotFound("Member not found.") from exc
+            raise NotFound(gettext("Member not found.")) from exc
         if not get_policy().can_change_role(user, conv, membership, target, role):
-            raise PermissionDenied("You cannot change this member's role.")
+            raise PermissionDenied(gettext("You cannot change this member's role."))
         if role == Membership.Role.OWNER:
             membership.role = Membership.Role.ADMIN
             membership.save(update_fields=["role"])
@@ -327,7 +330,7 @@ def mark_read(user: Any, conversation_id: Any, seq: Any) -> int:
     try:
         seq = int(seq)
     except (TypeError, ValueError) as exc:
-        raise ValidationFailed("seq must be an integer.", code="invalid_seq") from exc
+        raise ValidationFailed(gettext("seq must be an integer."), code="invalid_seq") from exc
     membership = get_membership(user, conversation_id)
     seq = max(0, min(seq, membership.conversation.last_seq))
     # Monotonic: a stale or out-of-order read never moves the marker backwards.

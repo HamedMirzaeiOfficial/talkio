@@ -1,5 +1,7 @@
 # فصل ۲ — ساختن یک پکیج Django قابل‌استفاده‌ی مجدد
 
+[English](en/02-reusable-django-app.md) · **فارسی**
+
 فایل‌های این فصل: `packages/django-chat/pyproject.toml`، `src/django_realtime_chat/{apps,conf,checks,users,permissions,urls,routing}.py`
 
 ## ۱. تفاوت «app درون پروژه» با «پکیج»

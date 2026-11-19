@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 
 import { useChatContext, useThemeRoot } from '../context.js';
 import { useChatClient, useConversation } from '../hooks.js';
-import { cx, formatTime } from '../utils.js';
+import { cx, formatNumber, formatTime } from '../utils.js';
 import { GroupMemberList } from './GroupMemberList.js';
 import { MessageText } from './MessageBubble.js';
 import { PresenceIndicator } from './PresenceIndicator.js';
@@ -103,7 +103,7 @@ export function ConversationInfoPanel({
           </h3>
           {isGroup ? (
             <p className="rc:text-[13px] rc:text-muted">
-              {conversation.member_count} {strings.members}
+              {formatNumber(conversation.member_count, locale)} {strings.members}
             </p>
           ) : (
             conversation.peer && (

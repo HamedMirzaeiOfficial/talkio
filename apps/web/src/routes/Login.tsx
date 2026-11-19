@@ -7,6 +7,7 @@ import { useSession } from '../app/session';
 import { Button, Field } from '../components/ui';
 import { AuthError, authApi } from '../lib/auth';
 import { AuthLayout } from './AuthLayout';
+import { msg, t } from '../lib/i18n';
 
 type Method = 'phone' | 'password';
 
@@ -39,7 +40,7 @@ export function Login() {
       await queryClient.invalidateQueries({ queryKey: ['session'] });
       navigate((location.state as { from?: string } | null)?.from ?? '/app', { replace: true });
     } catch (e) {
-      setError(e instanceof AuthError ? e.message : 'Could not reach the server. Try again.');
+      setError(e instanceof AuthError ? e.message : t('Could not reach the server. Try again.'));
     } finally {
       setBusy(false);
     }
@@ -52,13 +53,13 @@ export function Login() {
 
   return (
     <AuthLayout
-      title="Welcome back"
-      subtitle="Sign in to continue your conversations."
+      title={t('Welcome back')}
+      subtitle={t('Sign in to continue your conversations.')}
       footer={
         <>
-          New to Talkio?{' '}
+          {t('New to Talkio?')}{' '}
           <Link to="/register" className="font-medium text-primary hover:underline">
-            Create an account
+            {t('Create an account')}
           </Link>
         </>
       }
@@ -66,13 +67,13 @@ export function Login() {
       {demo && (
         <div
           role="tablist"
-          aria-label="Sign-in method"
+          aria-label={t('Sign-in method')}
           className="mb-5 grid grid-cols-2 gap-1 rounded-ui bg-surface-2 p-1"
         >
           {(
             [
-              ['phone', 'Phone number'],
-              ['password', 'Username'],
+              ['phone', msg('Phone number')],
+              ['password', msg('Username')],
             ] as const
           ).map(([value, label]) => (
             <button
@@ -86,7 +87,7 @@ export function Login() {
               }}
               className={`h-8 rounded-[8px] text-[13px] font-medium transition ${method === value ? 'bg-surface text-fg shadow-sm' : 'text-muted hover:text-fg'}`}
             >
-              {label}
+              {t(label)}
             </button>
           ))}
         </div>
@@ -95,8 +96,9 @@ export function Login() {
         {method === 'phone' ? (
           <>
             <Field
-              label="Phone number"
+              label={t('Phone number')}
               type="tel"
+              dir="ltr"
               inputMode="numeric"
               autoComplete="tel"
               autoFocus
@@ -105,28 +107,31 @@ export function Login() {
               onChange={(e) => setPhone(e.target.value)}
             />
             <Field
-              label="Login code"
+              label={t('Login code')}
               inputMode="numeric"
+              dir="ltr"
               autoComplete="one-time-code"
               maxLength={8}
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              hint="Development mode — the default code is 1234."
+              hint={t('Development mode — the default code is 1234.')}
             />
           </>
         ) : (
           <>
             <Field
-              label="Username or email"
+              label={t('Username or email')}
               autoComplete="username"
+              dir="ltr"
               autoFocus
               required
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
             />
             <Field
-              label="Password"
+              label={t('Password')}
               type="password"
+              dir="ltr"
               autoComplete="current-password"
               required
               value={password}
@@ -143,13 +148,13 @@ export function Login() {
           </p>
         )}
         <Button type="submit" loading={busy} disabled={!ready} className="mt-1 w-full">
-          Sign in
+          {t('Sign in')}
         </Button>
       </form>
       {session.data && session.data.providers.length > 0 && (
         <div className="mt-6 flex flex-col gap-2">
           <div className="flex items-center gap-3 text-[12px] text-subtle">
-            <span className="h-px flex-1 bg-border" /> or <span className="h-px flex-1 bg-border" />
+            <span className="h-px flex-1 bg-border" /> {t('or')} <span className="h-px flex-1 bg-border" />
           </div>
           {session.data.providers.map((p) => (
             <a
@@ -157,15 +162,15 @@ export function Login() {
               href={p.login_url}
               className="inline-flex h-10 items-center justify-center rounded-ui border border-border bg-surface text-sm font-medium text-fg hover:bg-surface-2"
             >
-              Continue with {p.name}
+              {t('Continue with {name}', { name: p.name })}
             </a>
           ))}
         </div>
       )}
       {import.meta.env.DEV && method === 'password' && (
         <p className="mt-6 rounded-ui border border-dashed border-border px-3 py-2 text-[12.5px] text-muted">
-          Seeded demo users: <code className="text-fg">alice</code> /{' '}
-          <code className="text-fg">talkio-demo-2026</code> (after{' '}
+          {t('Seeded demo users:')} <code className="text-fg">alice</code> /{' '}
+          <code className="text-fg">talkio-demo-2026</code> ({t('after')}{' '}
           <code className="text-fg">manage.py seed_demo</code>).
         </p>
       )}

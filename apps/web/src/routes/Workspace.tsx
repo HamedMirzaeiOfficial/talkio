@@ -6,6 +6,7 @@ import { useNavigate, useOutletContext, useParams } from 'react-router-dom';
 
 import type { ShellContext } from '../components/AppShell';
 import { useMediaQuery } from '../lib/useMediaQuery';
+import { t } from '../lib/i18n';
 
 const INFO_KEY = 'talkio:info-panel';
 
@@ -39,13 +40,13 @@ export function Workspace() {
       onNewConversation={() => shell.openNewConversation('direct')}
       header={
         <div className="flex w-full items-center justify-between">
-          <h1 className="text-[17px] font-semibold tracking-tight text-fg">Chats</h1>
+          <h1 className="text-[17px] font-semibold tracking-tight text-fg">{t('Chats')}</h1>
           <div className="flex gap-1">
             <button
               type="button"
               onClick={() => shell.openNewConversation('group')}
-              aria-label="New group"
-              title="New group"
+              aria-label={t('New group')}
+              title={t('New group')}
               className="grid size-8 place-items-center rounded-ui text-muted transition hover:bg-surface-2 hover:text-fg"
             >
               <Users className="size-[18px]" />
@@ -53,8 +54,8 @@ export function Workspace() {
             <button
               type="button"
               onClick={() => shell.openNewConversation('direct')}
-              aria-label="New conversation"
-              title="New conversation (Alt+N)"
+              aria-label={t('New conversation')}
+              title={t('New conversation (Alt+N)')}
               className="grid size-8 place-items-center rounded-ui text-muted transition hover:bg-surface-2 hover:text-fg"
             >
               <Plus className="size-[18px]" />
@@ -128,18 +129,33 @@ export function Workspace() {
                 <div className="grid size-14 place-items-center rounded-2xl bg-primary-soft text-primary">
                   <Users className="size-6" />
                 </div>
-                <h2 className="text-lg font-semibold text-fg">Pick up where you left off</h2>
+                <h2 className="text-lg font-semibold text-fg">{t('Pick up where you left off')}</h2>
                 <p className="text-sm text-muted">
-                  Choose a conversation from the list, or start a new one. Press{' '}
-                  <kbd className="rounded border border-border px-1.5 py-0.5 text-[12px]">Ctrl K</kbd> to
-                  search messages.
+                  {t(
+                    'Choose a conversation from the list, or start a new one. Press {keys} to search messages.',
+                  )
+                    .split('{keys}')
+                    .flatMap((part, index) =>
+                      index === 0
+                        ? [part]
+                        : [
+                            <kbd
+                              key="keys"
+                              dir="ltr"
+                              className="rounded border border-border px-1.5 py-0.5 text-[12px]"
+                            >
+                              Ctrl K
+                            </kbd>,
+                            part,
+                          ],
+                    )}
                 </p>
                 <button
                   type="button"
                   onClick={() => shell.openNewConversation('direct')}
                   className="mt-2 h-9 rounded-ui bg-primary px-4 text-sm font-medium text-primary-fg hover:brightness-110"
                 >
-                  New conversation
+                  {t('New conversation')}
                 </button>
               </div>
             </div>

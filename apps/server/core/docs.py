@@ -4,7 +4,7 @@ Renders README.md and every Markdown file under docs/ for staff users, with navi
 a table of contents, syntax highlighting, Mermaid diagrams and right-to-left layout for
 Persian pages. URLs mirror repository paths (``/admin/docs/docs/api/websocket.md``), so the
 relative links inside the documents work unchanged. Only files below the repository's
-``docs/`` folder plus ``README.md`` are reachable; nothing else in the repository is.
+``docs/`` folder plus ``README.md`` and ``README.fa.md`` are reachable; nothing else in the repository is.
 """
 
 from __future__ import annotations
@@ -24,7 +24,10 @@ from django.urls import path, reverse
 from markdown.extensions.toc import slugify_unicode
 
 ASSET_TYPES = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"}
-RTL_PREFIXES = ("docs/learn/",)
+# Persian documents: the learning guide (except its English copy), docs/fa/ and README.fa.md.
+RTL_PREFIXES = ("docs/learn/", "docs/fa/", "README.fa.md")
+LTR_PREFIXES = ("docs/learn/en/",)
+_LANG_LINK = re.compile(r"\[فارسی\]\([^)]*\)|<a [^>]*>فارسی</a>")
 _STRONG_RTL = re.compile("[֐-ࣿיִ-﷿ﹰ-ﻼ]")
 
 
@@ -44,6 +47,8 @@ SECTIONS: list[tuple[str, list[str]]] = [
     ("History", ["docs/architecture/current-state.md"]),
 ]
 LEARN_DIR = "docs/learn/"
+LEARN_EN_DIR = "docs/learn/en/"
+FA_DIR = "docs/fa/"
 DECISIONS_DIR = "docs/architecture/decisions/"
 # Pointer pages kept only for old links.
 HIDDEN = {
@@ -62,7 +67,7 @@ def resolve(relative: str) -> Path:
     """Map a URL path to a file, refusing anything outside README.md and docs/."""
     root = docs_root()
     candidate = (root / relative).resolve()
-    allowed = candidate == root / "README.md" or candidate.is_relative_to(root / "docs")
+    allowed = candidate in (root / "README.md", root / "README.fa.md") or candidate.is_relative_to(root / "docs")
     if not allowed or not candidate.is_file():
         raise Http404("Document not found")
     return candidate
@@ -82,6 +87,8 @@ def _title_of(file: Path) -> str:
 def _navigation_cached(stamp: float) -> list[tuple[str, list[NavItem], bool]]:
     root = docs_root()
     files = {str(p.relative_to(root)) for p in (root / "docs").rglob("*.md")} | {"README.md"}
+    if (root / "README.fa.md").exists():
+        files.add("README.fa.md")
     seen: set[str] = set()
     groups: list[tuple[str, list[NavItem], bool]] = []
     for name, paths in SECTIONS:
@@ -91,10 +98,22 @@ def _navigation_cached(stamp: float) -> list[tuple[str, list[NavItem], bool]]:
             groups.append((name, items, False))
     decisions = sorted(p for p in files if p.startswith(DECISIONS_DIR))
     groups.append(("Decisions (ADR)", [NavItem(p, _title_of(root / p)) for p in decisions], False))
-    # The guide's own index first, then chapters in order.
-    learn = sorted((p for p in files if p.startswith(LEARN_DIR)), key=lambda p: (not p.endswith("README.md"), p))
+
+    # Each guide's own index first, then chapters in order.
+    def index_first(paths):
+        return sorted(paths, key=lambda p: (not p.endswith("README.md"), p))
+
+    learn_en = index_first(p for p in files if p.startswith(LEARN_EN_DIR))
+    learn = index_first(p for p in files if p.startswith(LEARN_DIR) and p not in learn_en)
+    persian = index_first(
+        [*(p for p in files if p.startswith(FA_DIR)), *(["README.fa.md"] if "README.fa.md" in files else [])]
+    )
+    if learn_en:
+        groups.append(("Learning guide (English)", [NavItem(p, _title_of(root / p)) for p in learn_en], False))
     groups.append(("راهنمای یادگیری", [NavItem(p, _title_of(root / p)) for p in learn], True))
-    seen.update(decisions + learn)
+    if persian:
+        groups.append(("مستندات فارسی", [NavItem(p, _title_of(root / p)) for p in persian], True))
+    seen.update(decisions + learn + learn_en + persian)
     other = sorted(p for p in files - seen - HIDDEN)
     if other:
         groups.append(("Other", [NavItem(p, _title_of(root / p)) for p in other], False))
@@ -138,7 +157,11 @@ def document(request: HttpRequest, doc_path: str = "README.md") -> HttpResponse:
     text = file.read_text(encoding="utf-8")
     body, toc = render_markdown(text)
     relative = str(file.relative_to(docs_root()))
-    rtl = relative.startswith(RTL_PREFIXES) or bool(_STRONG_RTL.search(text[:400]))
+    # The "English · فارسی" switch at the top of English pages must not make them right-to-left.
+    sample = _LANG_LINK.sub("", text[:600])[:400]
+    rtl = not relative.startswith(LTR_PREFIXES) and (
+        relative.startswith(RTL_PREFIXES) or bool(_STRONG_RTL.search(sample))
+    )
     return render(
         request,
         "docs/page.html",

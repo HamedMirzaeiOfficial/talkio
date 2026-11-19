@@ -6,6 +6,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button, Field } from '../components/ui';
 import { AuthError, authApi } from '../lib/auth';
 import { AuthLayout } from './AuthLayout';
+import { t } from '../lib/i18n';
 
 type Errors = Partial<
   Record<'username' | 'display_name' | 'email' | 'password' | 'confirm' | 'form', string>
@@ -23,10 +24,10 @@ export function Register() {
   const validate = (): Errors => {
     const next: Errors = {};
     if (!/^[A-Za-z0-9_.]{3,30}$/.test(form.username))
-      next.username = 'Use 3–30 letters, numbers, dots or underscores.';
-    if (!form.display_name.trim()) next.display_name = 'Tell people what to call you.';
-    if (form.password.length < 8) next.password = 'Use at least 8 characters.';
-    if (form.password !== form.confirm) next.confirm = 'Passwords do not match.';
+      next.username = t('Use 3–30 letters, numbers, dots or underscores.');
+    if (!form.display_name.trim()) next.display_name = t('Tell people what to call you.');
+    if (form.password.length < 8) next.password = t('Use at least 8 characters.');
+    if (form.password !== form.confirm) next.confirm = t('Passwords do not match.');
     return next;
   };
 
@@ -47,7 +48,7 @@ export function Register() {
       navigate('/app', { replace: true });
     } catch (e) {
       if (e instanceof AuthError && e.field) setErrors({ [e.field]: e.message });
-      else setErrors({ form: e instanceof Error ? e.message : 'Registration failed.' });
+      else setErrors({ form: e instanceof Error ? e.message : t('Registration failed.') });
     } finally {
       setBusy(false);
     }
@@ -55,20 +56,20 @@ export function Register() {
 
   return (
     <AuthLayout
-      title="Create your account"
-      subtitle="It takes less than a minute."
+      title={t('Create your account')}
+      subtitle={t('It takes less than a minute.')}
       footer={
         <>
-          Already have an account?{' '}
+          {t('Already have an account?')}{' '}
           <Link to="/login" className="font-medium text-primary hover:underline">
-            Sign in
+            {t('Sign in')}
           </Link>
         </>
       }
     >
       <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
         <Field
-          label="Display name"
+          label={t('Display name')}
           autoComplete="name"
           autoFocus
           value={form.display_name}
@@ -77,32 +78,36 @@ export function Register() {
           dir="auto"
         />
         <Field
-          label="Username"
+          label={t('Username')}
           autoComplete="username"
+          dir="ltr"
           value={form.username}
           onChange={set('username')}
           error={errors.username}
-          hint="Others can find you by this handle."
+          hint={t('Others can find you by this handle.')}
         />
         <Field
-          label="Email (optional)"
+          label={t('Email (optional)')}
           type="email"
+          dir="ltr"
           autoComplete="email"
           value={form.email}
           onChange={set('email')}
           error={errors.email}
         />
         <Field
-          label="Password"
+          label={t('Password')}
           type="password"
+          dir="ltr"
           autoComplete="new-password"
           value={form.password}
           onChange={set('password')}
           error={errors.password}
         />
         <Field
-          label="Confirm password"
+          label={t('Confirm password')}
           type="password"
+          dir="ltr"
           autoComplete="new-password"
           value={form.confirm}
           onChange={set('confirm')}
@@ -114,7 +119,7 @@ export function Register() {
           </p>
         )}
         <Button type="submit" loading={busy} className="mt-1 w-full">
-          Create account
+          {t('Create account')}
         </Button>
       </form>
     </AuthLayout>

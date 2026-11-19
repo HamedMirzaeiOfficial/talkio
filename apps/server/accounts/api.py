@@ -17,6 +17,7 @@ from django.db import IntegrityError, transaction
 from django.middleware.csrf import get_token
 from django.urls import path
 from django.utils.decorators import method_decorator
+from django.utils.translation import gettext
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -98,7 +99,7 @@ class LoginView(AuthView):
             phone = str(data.get("phone", "")).strip()
             code = str(data.get("code", "")).strip()
             if not PHONE_RE.match(phone) or not secrets.compare_digest(code, settings.DEMO_AUTH_CODE):
-                return error("invalid_demo_credentials", "Enter a valid phone number and the demo code.", 401)
+                return error("invalid_demo_credentials", gettext("Enter a valid phone number and the demo code."), 401)
             user = User.objects.filter(phone=phone).first()
             if user is None:
                 # Random username (never the phone number) and a neutral display name.
@@ -112,10 +113,10 @@ class LoginView(AuthView):
             identifier = str(data.get("identifier", "")).strip()
             password = data.get("password") or ""
             if not identifier or not password:
-                return error("invalid_credentials", "Enter your username or email and password.")
+                return error("invalid_credentials", gettext("Enter your username or email and password."))
             user = authenticate(request, username=identifier, password=password)
             if user is None or not user.is_active:
-                return error("invalid_credentials", "Incorrect username or password.", 401)
+                return error("invalid_credentials", gettext("Incorrect username or password."), 401)
         login(request, user, backend=BACKEND)
         return Response({"user": user_payload(user), "csrf_token": get_token(request)})
 
@@ -129,15 +130,17 @@ class RegisterView(AuthView):
         email = str(data.get("email", "")).strip() or None
         password = data.get("password") or ""
         if not USERNAME_RE.match(username):
-            return error("invalid_username", "Use 3-30 letters, numbers, dots or underscores.", field="username")
+            return error(
+                "invalid_username", gettext("Use 3-30 letters, numbers, dots or underscores."), field="username"
+            )
         if not display_name or len(display_name) > 60:
-            return error("invalid_display_name", "Enter a name up to 60 characters.", field="display_name")
+            return error("invalid_display_name", gettext("Enter a name up to 60 characters."), field="display_name")
         if email and ("@" not in email or len(email) > 254):
-            return error("invalid_email", "Enter a valid email address.", field="email")
+            return error("invalid_email", gettext("Enter a valid email address."), field="email")
         if User.objects.filter(username__iexact=username).exists():
-            return error("username_taken", "This username is taken.", 409, field="username")
+            return error("username_taken", gettext("This username is taken."), 409, field="username")
         if email and User.objects.filter(email__iexact=email).exists():
-            return error("email_taken", "An account with this email already exists.", 409, field="email")
+            return error("email_taken", gettext("An account with this email already exists."), 409, field="email")
         first, _, last = display_name.partition(" ")
         candidate = User(username=username, email=email, first_name=first, last_name=last)
         try:
@@ -150,7 +153,7 @@ class RegisterView(AuthView):
                     username=username, email=email, password=password, first_name=first, last_name=last
                 )
         except IntegrityError:
-            return error("username_taken", "This username is taken.", 409, field="username")
+            return error("username_taken", gettext("This username is taken."), 409, field="username")
         login(request, user, backend=BACKEND)
         return Response({"user": user_payload(user), "csrf_token": get_token(request)}, status=201)
 
@@ -178,19 +181,21 @@ class MeView(APIView):
             if field in data:
                 value = str(data.get(field) or "").strip()
                 if len(value) > limit:
-                    return error("invalid_profile", f"{field} is too long.", field=field)
+                    return error("invalid_profile", gettext("%(field)s is too long.") % {"field": field}, field=field)
                 if field == "email" and value:
                     if "@" not in value:
-                        return error("invalid_email", "Enter a valid email address.", field="email")
+                        return error("invalid_email", gettext("Enter a valid email address."), field="email")
                     if User.objects.filter(email__iexact=value).exclude(pk=user.pk).exists():
-                        return error("email_taken", "This email is already in use.", 409, field="email")
+                        return error("email_taken", gettext("This email is already in use."), 409, field="email")
                 setattr(user, field, value or (None if field == "email" else ""))
         if "username" in data:
             username = str(data.get("username") or "").strip()
             if not USERNAME_RE.match(username):
-                return error("invalid_username", "Use 3-30 letters, numbers, dots or underscores.", field="username")
+                return error(
+                    "invalid_username", gettext("Use 3-30 letters, numbers, dots or underscores."), field="username"
+                )
             if User.objects.filter(username__iexact=username).exclude(pk=user.pk).exists():
-                return error("username_taken", "This username is taken.", 409, field="username")
+                return error("username_taken", gettext("This username is taken."), 409, field="username")
             user.username = username
         avatar = request.FILES.get("avatar")
         if avatar is not None:
@@ -199,11 +204,11 @@ class MeView(APIView):
             head = avatar.read(64)
             avatar.seek(0)
             if avatar.size > 5 * 1024 * 1024 or detect_content_type(head) not in AVATAR_TYPES:
-                return error("invalid_avatar", "Avatars must be JPEG, PNG or WebP under 5 MB.", field="avatar")
+                return error("invalid_avatar", gettext("Avatars must be JPEG, PNG or WebP under 5 MB."), field="avatar")
             try:
                 image_dimensions(avatar)
             except ValueError:
-                return error("invalid_avatar", "The avatar is not a valid image.", field="avatar")
+                return error("invalid_avatar", gettext("The avatar is not a valid image."), field="avatar")
             user.avatar = avatar
         elif data.get("remove_avatar") in (True, "true", "1"):
             user.avatar = None
@@ -218,7 +223,7 @@ class PasswordView(APIView):
         current = request.data.get("current_password") or ""
         new = request.data.get("new_password") or ""
         if not request.user.check_password(current):
-            return error("invalid_password", "Your current password is incorrect.", field="current_password")
+            return error("invalid_password", gettext("Your current password is incorrect."), field="current_password")
         try:
             validate_password(new, user=request.user)
         except ValidationError as exc:

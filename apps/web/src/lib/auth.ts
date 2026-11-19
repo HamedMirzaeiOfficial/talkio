@@ -1,4 +1,5 @@
 import { urls } from './config';
+import { getLang } from './i18n';
 
 export interface AccountUser {
   id: number;
@@ -40,6 +41,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const method = init.method ?? 'GET';
   const headers = new Headers(init.headers);
   headers.set('Accept', 'application/json');
+  headers.set('Accept-Language', getLang());
   if (method !== 'GET') {
     const token = cookie('csrftoken') ?? csrfToken;
     if (token) headers.set('X-CSRFToken', token);

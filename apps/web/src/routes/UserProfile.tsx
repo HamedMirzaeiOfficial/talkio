@@ -8,6 +8,7 @@ import { FullScreenSpinner } from '../components/FullScreenSpinner';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui';
 import { Page } from './Page';
+import { t } from '../lib/i18n';
 
 export function UserProfile() {
   const { userId = '' } = useParams();
@@ -24,8 +25,8 @@ export function UserProfile() {
   if (query.isPending) return <FullScreenSpinner />;
   if (query.isError || !query.data) {
     return (
-      <Page title="Profile" back>
-        <p className="text-sm text-muted">This person is not available.</p>
+      <Page title={t('Profile')} back>
+        <p className="text-sm text-muted">{t('This person is not available.')}</p>
       </Page>
     );
   }
@@ -39,7 +40,11 @@ export function UserProfile() {
           <h2 dir="auto" className="text-xl font-semibold text-fg">
             {user.display_name}
           </h2>
-          {user.username && <p className="text-sm text-muted">@{user.username}</p>}
+          {user.username && (
+            <p className="text-sm text-muted" dir="ltr">
+              @{user.username}
+            </p>
+          )}
         </div>
         <PresenceIndicator userId={user.id} />
         {!isMe && (
@@ -58,7 +63,7 @@ export function UserProfile() {
               }
             }}
           >
-            <MessageSquare className="size-4" /> Send message
+            <MessageSquare className="size-4" /> {t('Send message')}
           </Button>
         )}
       </div>

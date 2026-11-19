@@ -13,7 +13,9 @@ from typing import Any
 
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
-from django.utils import timezone
+from django.conf import settings
+from django.utils import timezone, translation
+from django.utils.translation import gettext
 
 from .. import PROTOCOL_VERSION
 from ..conf import chat_settings
@@ -56,6 +58,23 @@ def _mark_read(user, conversation_id, seq) -> dict[str, Any]:
     }
 
 
+def connection_language(scope: dict[str, Any]) -> str:
+    """Language for this socket's error messages: `?lang=` (the client's UI language), else the
+    handshake's Accept-Language, else LANGUAGE_CODE. WebSockets bypass LocaleMiddleware."""
+    from urllib.parse import parse_qs
+
+    requested = (parse_qs(scope.get("query_string", b"").decode("latin-1")).get("lang") or [""])[0]
+    if not requested:
+        for name, value in scope.get("headers", []):
+            if name == b"accept-language":
+                requested = value.decode("latin-1").split(",")[0].split(";")[0].strip()
+                break
+    try:
+        return translation.get_supported_language_variant(requested or settings.LANGUAGE_CODE)
+    except LookupError:
+        return settings.LANGUAGE_CODE
+
+
 class ChatConsumer(AsyncJsonWebsocketConsumer):
     user: Any
     connection_id: str
@@ -66,6 +85,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self) -> None:
         self.user = self.scope.get("user")
         self.connection_id = uuid.uuid4().hex
+        self.language = connection_language(self.scope)
         self.subscriptions = set()
         self.typing_sent: dict[str, float] = {}
         self.buckets = {
@@ -137,16 +157,22 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         request_id = content.get("request_id") if isinstance(content, dict) else None
         if request_id is not None and (not isinstance(request_id, str) or len(request_id) > 64):
             request_id = None
+        with translation.override(self.language):
+            await self._receive(content, request_id)
+
+    async def _receive(self, content: Any, request_id: str | None) -> None:
         try:
             if not isinstance(content, dict) or not isinstance(content.get("type"), str):
-                raise ValidationFailed("Events must be JSON objects with a 'type'.", code="invalid_event")
+                raise ValidationFailed(
+                    gettext("Events must be JSON objects with a 'type'."), code="invalid_event"
+                )
             await self._dispatch(content["type"], content, request_id)
         except ChatError as exc:
             await self._error(exc.code, exc.message, request_id=request_id, details=exc.details)
         except Exception:
             logger.exception("chat websocket event failed", extra={"event_type": content.get("type")})
             await self._error(
-                "internal_error", "The server could not process this event.", request_id=request_id
+                "internal_error", gettext("The server could not process this event."), request_id=request_id
             )
 
     async def _dispatch(self, event_type: str, content: dict[str, Any], request_id: str | None) -> None:
@@ -170,7 +196,10 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             result = await _mark_read(self.user, conversation_id, content.get("seq"))
             await self.send_json({"type": "ack", "request_id": request_id, "data": result})
         else:
-            raise ValidationFailed(f"Unsupported event type {event_type[:40]!r}.", code="unknown_event")
+            raise ValidationFailed(
+                gettext("Unsupported event type %(value)s.") % {"value": f"{event_type[:40]!r}"},
+                code="unknown_event",
+            )
 
     def _limit(self, category: str) -> None:
         wait = self.buckets[category].take()
@@ -180,7 +209,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
     def _require_subscription(self, conversation_id: Any) -> str:
         cid = str(conversation_id or "")
         if cid not in self.subscriptions:
-            raise NotFound("Conversation not found.")
+            raise NotFound(gettext("Conversation not found."))
         return cid
 
     async def _typing(self, conversation_id: Any, is_typing: bool) -> None:

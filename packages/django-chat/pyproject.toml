@@ -37,7 +37,7 @@ test = ["pytest>=8", "pytest-django>=4.8", "pytest-asyncio>=0.23", "Pillow>=10.0
 where = ["src"]
 
 [tool.setuptools.package-data]
-django_realtime_chat = ["py.typed"]
+django_realtime_chat = ["py.typed", "locale/*/LC_MESSAGES/django.po", "locale/*/LC_MESSAGES/django.mo"]
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "tests.settings"

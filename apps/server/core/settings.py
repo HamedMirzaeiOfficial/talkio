@@ -77,6 +77,8 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    # Answers in the language the SPA asks for (Accept-Language): English or Persian.
+    "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -157,7 +159,10 @@ CSRF_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_HTTPONLY = False
 
 # --- i18n / static ------------------------------------------------------------------
-LANGUAGE_CODE = os.getenv("LANGUAGE_CODE", "en-us")
+LANGUAGE_CODE = os.getenv("LANGUAGE_CODE", "en")
+LANGUAGES = [("en", "English"), ("fa", "فارسی")]
+# The app's own messages; django_realtime_chat ships its translations inside the package.
+LOCALE_PATHS = [BASE_DIR / "locale"]
 TIME_ZONE = os.getenv("TIME_ZONE", "UTC")
 USE_I18N = True
 USE_TZ = True

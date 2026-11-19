@@ -1,16 +1,18 @@
 import { useChatContext } from '../context.js';
 import { useNow, useTypingUsers } from '../hooks.js';
-import { cx } from '../utils.js';
+import { cx, formatNumber } from '../utils.js';
 
 export function useTypingLabel(conversationId: string | null | undefined): string | null {
   const users = useTypingUsers(conversationId);
-  const { strings } = useChatContext();
+  const context = useChatContext();
+  const { strings } = context;
   useNow(1000, users.length > 0); // expire stale typing entries
   if (users.length === 0) return null;
   const names = users.map((u) => u.display_name.split(' ')[0]);
   if (names.length === 1) return `${names[0]} ${strings.typingOne}`;
-  if (names.length === 2) return `${names[0]} & ${names[1]} ${strings.typingMany}`;
-  return `${names.length} people ${strings.typingMany}`;
+  if (names.length === 2) return `${names[0]} ${strings.and} ${names[1]} ${strings.typingMany}`;
+  const { locale } = context;
+  return `${formatNumber(names.length, locale)} ${strings.people} ${strings.typingMany}`;
 }
 
 export function TypingDots({ className }: { className?: string }) {

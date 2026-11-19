@@ -104,3 +104,22 @@ test('media: voice, stickers and emoji picker', async ({ page }) => {
   await settle(page);
   await page.screenshot({ path: out('media-stickers') });
 });
+
+test('persian', async ({ page }) => {
+  await theme(page, 'dark');
+  await page.addInitScript(() => localStorage.setItem('talkio:info-panel', '0'));
+  await login(page, 'alice');
+  await page.evaluate(() => localStorage.setItem('talkio:lang', 'fa'));
+  await openConversation(page, 'Product design');
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+  await expect(page.getByRole('navigation', { name: 'گفت‌وگوها' })).toBeVisible();
+  await settle(page);
+  await page.screenshot({ path: out('workspace-fa') });
+  await page.goto('/app/settings');
+  await settle(page);
+  await page.screenshot({ path: out('settings-fa') });
+  await page.goto('/');
+  await settle(page);
+  await page.screenshot({ path: out('landing-fa') });
+});

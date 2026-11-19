@@ -2,6 +2,7 @@ import { AlertCircle, CheckCircle2, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import type { ReactNode } from 'react';
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
+import { t } from '../lib/i18n';
 
 type Tone = 'error' | 'success' | 'info';
 interface Toast {
@@ -58,7 +59,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               <span className="flex-1">{toast.message}</span>
               <button
                 type="button"
-                aria-label="Dismiss"
+                aria-label={t('Dismiss')}
                 onClick={() => dismiss(toast.id)}
                 className="rounded p-0.5 text-subtle hover:text-fg"
               >

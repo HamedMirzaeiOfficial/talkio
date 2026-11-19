@@ -9,6 +9,7 @@ import { useToast } from '../components/toast';
 import { Button, Field } from '../components/ui';
 import { AuthError, authApi } from '../lib/auth';
 import { Page, Section } from './Page';
+import { t } from '../lib/i18n';
 
 export function Profile() {
   const session = useSession();
@@ -44,7 +45,7 @@ export function Profile() {
       if (form.username && form.username !== user.username) patch.username = form.username;
       await authApi.updateProfile(patch);
       await refresh();
-      toast('Profile updated', 'success');
+      toast(t('Profile updated'), 'success');
     } catch (e) {
       if (e instanceof AuthError && e.field) setErrors({ [e.field]: e.message });
       else toast((e as Error).message, 'error');
@@ -60,23 +61,25 @@ export function Profile() {
     try {
       await authApi.updateProfile(data);
       await refresh();
-      toast('Avatar updated', 'success');
+      toast(t('Avatar updated'), 'success');
     } catch (e) {
       toast((e as Error).message, 'error');
     }
   };
 
   return (
-    <Page title="Profile">
+    <Page title={t('Profile')}>
       <Section
-        title="Public profile"
-        description="Shown to people you chat with. Changes appear in new events and after a refresh for others."
+        title={t('Public profile')}
+        description={t(
+          'Shown to people you chat with. Changes appear in new events and after a refresh for others.',
+        )}
       >
         <div className="mb-5 flex items-center gap-4">
           <UserAvatar user={user} size="xl" />
           <div className="flex flex-wrap gap-2">
             <Button variant="secondary" onClick={() => file.current?.click()}>
-              <Camera className="size-4" /> Upload photo
+              <Camera className="size-4" /> {t('Upload photo')}
             </Button>
             {user.avatar_url && (
               <Button
@@ -88,7 +91,7 @@ export function Profile() {
                   await refresh();
                 }}
               >
-                <Trash2 className="size-4" /> Remove
+                <Trash2 className="size-4" /> {t('Remove')}
               </Button>
             )}
             <input
@@ -102,41 +105,43 @@ export function Profile() {
         </div>
         <form onSubmit={save} className="grid gap-4 sm:grid-cols-2">
           <Field
-            label="First name"
+            label={t('First name')}
             value={form.first_name}
             onChange={(e) => setForm({ ...form, first_name: e.target.value })}
             error={errors.first_name}
             dir="auto"
           />
           <Field
-            label="Last name"
+            label={t('Last name')}
             value={form.last_name}
             onChange={(e) => setForm({ ...form, last_name: e.target.value })}
             error={errors.last_name}
             dir="auto"
           />
           <Field
-            label="Username"
+            label={t('Username')}
+            dir="ltr"
             value={form.username}
             onChange={(e) => setForm({ ...form, username: e.target.value })}
             error={errors.username}
           />
           <Field
-            label="Email"
+            label={t('Email')}
             type="email"
+            dir="ltr"
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
             error={errors.email}
-            hint="Never shown to other users."
+            hint={t('Never shown to other users.')}
           />
           <div className="sm:col-span-2">
             <Button type="submit" loading={saving}>
-              Save changes
+              {t('Save changes')}
             </Button>
           </div>
         </form>
       </Section>
-      <Section title="Password">
+      <Section title={t('Password')}>
         <form
           className="grid gap-4 sm:grid-cols-2"
           onSubmit={async (event) => {
@@ -146,7 +151,7 @@ export function Profile() {
             try {
               await authApi.changePassword(passwords.current, passwords.next);
               setPasswords({ current: '', next: '' });
-              toast('Password changed', 'success');
+              toast(t('Password changed'), 'success');
             } catch (e) {
               setPasswordError((e as Error).message);
             } finally {
@@ -155,15 +160,17 @@ export function Profile() {
           }}
         >
           <Field
-            label="Current password"
+            label={t('Current password')}
             type="password"
+            dir="ltr"
             autoComplete="current-password"
             value={passwords.current}
             onChange={(e) => setPasswords({ ...passwords, current: e.target.value })}
           />
           <Field
-            label="New password"
+            label={t('New password')}
             type="password"
+            dir="ltr"
             autoComplete="new-password"
             value={passwords.next}
             onChange={(e) => setPasswords({ ...passwords, next: e.target.value })}
@@ -176,7 +183,7 @@ export function Profile() {
               loading={changing}
               disabled={!passwords.current || !passwords.next}
             >
-              Change password
+              {t('Change password')}
             </Button>
           </div>
         </form>

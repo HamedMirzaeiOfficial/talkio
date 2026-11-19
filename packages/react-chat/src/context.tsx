@@ -171,6 +171,11 @@ export function ChatProvider(props: ChatProviderProps) {
   return <ChatContext.Provider value={value}>{props.children}</ChatContext.Provider>;
 }
 
+/** Like useChatContext, but returns null outside a provider (for primitives usable on their own). */
+export function useOptionalChatContext(): ChatContextValue | null {
+  return useContext(ChatContext);
+}
+
 export function useChatContext(): ChatContextValue {
   const value = useContext(ChatContext);
   if (!value) throw new Error('Chat components must be rendered inside <ChatProvider>.');

@@ -1,5 +1,7 @@
 # فصل ۱۱ — بسته‌بندی، CI و استقرار
 
+[English](en/11-packaging-and-ops.md) · **فارسی**
+
 ## ۱. پکیج پایتون مدرن
 
 `packages/django-chat/pyproject.toml`:

@@ -8,7 +8,8 @@ WORKDIR /app
 # The reusable package is installed from source exactly as the requirements reference it.
 COPY packages/django-chat packages/django-chat
 COPY apps/server/requirements.txt apps/server/requirements.txt
-RUN pip install -r apps/server/requirements.txt
+# pip resolves the requirement's relative path (-e ../../packages/…) against the working directory.
+RUN cd apps/server && pip install -r requirements.txt
 
 COPY apps/server apps/server
 # Documentation shown to staff at /admin/docs/

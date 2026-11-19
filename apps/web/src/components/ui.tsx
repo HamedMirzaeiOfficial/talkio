@@ -2,6 +2,9 @@ import { Loader2 } from 'lucide-react';
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode } from 'react';
 import { forwardRef, useId } from 'react';
 
+import type { Lang } from '../lib/i18n';
+import { setLang, t, useLang } from '../lib/i18n';
+
 const cx = (...v: (string | false | null | undefined)[]) => v.filter(Boolean).join(' ');
 
 export function Button({
@@ -101,5 +104,39 @@ export function Logo({ className, iconOnly = false }: { className?: string; icon
       <LogoMark size={iconOnly ? 34 : 30} />
       {iconOnly ? <span className="sr-only">Talkio</span> : 'Talkio'}
     </span>
+  );
+}
+
+const LANGS: { id: Lang; label: string }[] = [
+  { id: 'en', label: 'English' },
+  { id: 'fa', label: 'فارسی' },
+];
+
+/** English / فارسی switch. Each label is written in its own language so anyone can find theirs. */
+export function LangSwitch({ className }: { className?: string }) {
+  const lang = useLang();
+  return (
+    <div
+      role="radiogroup"
+      aria-label={t('Language')}
+      className={cx('inline-flex rounded-ui border border-border bg-surface p-0.5', className)}
+    >
+      {LANGS.map((item) => (
+        <button
+          key={item.id}
+          type="button"
+          role="radio"
+          lang={item.id}
+          aria-checked={lang === item.id}
+          onClick={() => setLang(item.id)}
+          className={cx(
+            'h-7 rounded-[calc(var(--rc-radius)-2px)] px-2.5 text-[12.5px] font-medium transition',
+            lang === item.id ? 'bg-primary-soft text-primary' : 'text-muted hover:text-fg',
+          )}
+        >
+          {item.label}
+        </button>
+      ))}
+    </div>
   );
 }

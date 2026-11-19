@@ -8,6 +8,7 @@ import { AddMembersDialog } from './dialogs.js';
 import { PresenceIndicator } from './PresenceIndicator.js';
 import { Button, Menu, MenuContent, MenuItem, MenuTrigger } from './primitives.js';
 import { UserAvatar } from './UserAvatar.js';
+import { formatNumber } from '../utils.js';
 
 export interface GroupMemberListProps {
   conversationId: string;
@@ -21,7 +22,7 @@ export function GroupMemberList({ conversationId, onSelectMember }: GroupMemberL
   const conversation = useConversation(conversationId);
   const config = useChatConfig();
   const me = useMe();
-  const { strings } = useChatContext();
+  const { strings, locale } = useChatContext();
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
   if (!conversation) return null;
@@ -43,7 +44,7 @@ export function GroupMemberList({ conversationId, onSelectMember }: GroupMemberL
     <section aria-label={strings.members} className="rc:flex rc:flex-col rc:gap-1">
       <div className="rc:flex rc:items-center rc:justify-between rc:px-1 rc:pb-1">
         <h3 className="rc:text-[12px] rc:font-semibold rc:tracking-wide rc:text-muted rc:uppercase">
-          {conversation.member_count} {strings.members}
+          {formatNumber(conversation.member_count, locale)} {strings.members}
         </h3>
         {canAdd && (
           <Button

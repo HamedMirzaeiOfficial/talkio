@@ -90,10 +90,7 @@ export function ChatWindow({
   if (!conversation) {
     return shell(
       list.loaded ? (
-        <EmptyState
-          title="Conversation not found"
-          hint="It may have been removed, or you are no longer a member."
-        />
+        <EmptyState title={strings.conversationNotFound} hint={strings.conversationNotFoundHint} />
       ) : (
         <div className="rc:grid rc:flex-1 rc:place-items-center">
           <Spinner />

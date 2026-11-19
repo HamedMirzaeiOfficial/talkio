@@ -1,5 +1,7 @@
 # فصل ۹ — رسانه: ایموجی، استیکر، ویس و فایل
 
+[English](en/09-media.md) · **فارسی**
+
 فایل‌های این فصل: `packages/react-chat/src/components/media/*`، `packages/django-chat/src/django_realtime_chat/{files,emoji}.py`، `services/attachments.py`، `apps/web/vite.config.ts`
 
 ## ۱. یونیکد: «یک کاراکتر» چیست؟

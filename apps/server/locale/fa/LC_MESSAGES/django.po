@@ -1,0 +1,61 @@
+# Persian translations. Edit msgstr values, then run: python scripts/i18n.py compile
+msgid ""
+msgstr ""
+"Project-Id-Version: talkio\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: fa\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: apps/server/accounts/api.py:184
+msgid "%(field)s is too long."
+msgstr "%(field)s خیلی طولانی است."
+
+#: apps/server/accounts/api.py:143
+msgid "An account with this email already exists."
+msgstr "حسابی با این ایمیل از قبل وجود دارد."
+
+#: apps/server/accounts/api.py:207
+msgid "Avatars must be JPEG, PNG or WebP under 5 MB."
+msgstr "تصویر پروفایل باید JPEG، PNG یا WebP و کمتر از ۵ مگابایت باشد."
+
+#: apps/server/accounts/api.py:137
+msgid "Enter a name up to 60 characters."
+msgstr "نامی تا ۶۰ نویسه وارد کنید."
+
+#: apps/server/accounts/api.py:139
+msgid "Enter a valid email address."
+msgstr "یک نشانی ایمیل معتبر وارد کنید."
+
+#: apps/server/accounts/api.py:102
+msgid "Enter a valid phone number and the demo code."
+msgstr "یک شمارهٔ تلفن معتبر و کد نمایشی را وارد کنید."
+
+#: apps/server/accounts/api.py:116
+msgid "Enter your username or email and password."
+msgstr "نام کاربری یا ایمیل و رمز عبور را وارد کنید."
+
+#: apps/server/accounts/api.py:119
+msgid "Incorrect username or password."
+msgstr "نام کاربری یا رمز اشتباه است."
+
+#: apps/server/accounts/api.py:211
+msgid "The avatar is not a valid image."
+msgstr "تصویر پروفایل یک عکس معتبر نیست."
+
+#: apps/server/accounts/api.py:189
+msgid "This email is already in use."
+msgstr "این ایمیل قبلاً استفاده شده است."
+
+#: apps/server/accounts/api.py:141
+msgid "This username is taken."
+msgstr "این نام کاربری گرفته شده است."
+
+#: apps/server/accounts/api.py:134
+msgid "Use 3-30 letters, numbers, dots or underscores."
+msgstr "از ۳ تا ۳۰ حرف انگلیسی، عدد، نقطه یا زیرخط استفاده کنید."
+
+#: apps/server/accounts/api.py:226
+msgid "Your current password is incorrect."
+msgstr "رمز فعلی شما اشتباه است."

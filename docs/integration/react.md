@@ -1,5 +1,7 @@
 # Using the TypeScript SDK and React components
 
+**English** · [فارسی](../fa/integration-react.md)
+
 Working example: [`examples/react-integration`](../../examples/react-integration) — an existing app with opinionated global CSS that embeds `<ChatWidget/>` on top of its own Django session.
 
 ```bash
@@ -105,6 +107,26 @@ client.dispose();
 ```
 
 `client.api` exposes every REST endpoint with `AbortSignal` support; `client.socket` is the connection manager (`state`, `reconnectNow()`); errors are `ChatError` (`kind`, `code`, `status`, `details`, `retryAfter`, `retryable`).
+
+## Language and right-to-left
+
+The components ship English (`defaultStrings`) and Persian (`faStrings`). Pass the strings and a locale, and give the page (or the element around the chat) `dir="rtl"`; the components use logical CSS only, so the whole layout mirrors.
+
+```tsx
+import { ChatProvider, faStrings } from '@realtime-chat/react';
+
+<html lang="fa" dir="rtl">…
+<ChatProvider client={client} strings={faStrings} locale="fa-IR">
+```
+
+- `locale` drives dates, times, relative times ("۵ دقیقه پیش"), member counts and unread badges through `Intl`.
+- Any subset of strings can be overridden: `strings={{ ...faStrings, send: 'بفرست' }}`. For another language, provide every key of `ChatStrings`; TypeScript flags missing ones.
+- Messages keep their own direction (`dir="auto"`), so English text in a Persian interface, or the other way round, renders correctly.
+- To get server error messages in the same language, tell the SDK the UI language; it sends `Accept-Language` on REST requests and `?lang=` on the socket (see the Django guide for the server side):
+
+```ts
+createChatClient({ baseUrl, wsUrl, language: () => currentLanguage });
+```
 
 ## Styling and theming
 

@@ -15,6 +15,7 @@ import { NavLink, Outlet, useLocation, useMatch, useNavigate } from 'react-route
 
 import { ThemeSync } from '../app/ThemeSync';
 import { Logo } from './ui';
+import { t } from '../lib/i18n';
 
 export interface ShellContext {
   openNewConversation: (mode?: 'direct' | 'group') => void;
@@ -93,20 +94,20 @@ export function AppShell() {
       <ThemeSync />
       {/* Desktop navigation rail */}
       <nav
-        aria-label="Main"
+        aria-label={t('Main')}
         className="hidden w-16 shrink-0 flex-col items-center gap-2 border-e border-border bg-sidebar py-3 md:flex"
       >
-        <NavLink to="/app" aria-label="Talkio home" className="mb-2">
+        <NavLink to="/app" aria-label={t('Talkio home')} className="mb-2">
           <Logo iconOnly />
         </NavLink>
-        <RailLink to="/app" label="Chats">
+        <RailLink to="/app" label={t('Chats')}>
           <MessageSquare className="size-5" />
           <UnreadBadge count={unread} className="absolute -end-1 -top-1 ring-2 ring-[var(--rc-sidebar)]" />
         </RailLink>
         <button
           type="button"
-          aria-label="Search messages (Ctrl+K)"
-          title="Search messages (Ctrl+K)"
+          aria-label={t('Search messages (Ctrl+K)')}
+          title={t('Search messages (Ctrl+K)')}
           onClick={() => setSearchOpen(true)}
           className="grid size-10 place-items-center rounded-xl text-muted transition hover:bg-surface-2 hover:text-fg"
         >
@@ -114,21 +115,21 @@ export function AppShell() {
         </button>
         <button
           type="button"
-          aria-label="New conversation (Alt+N)"
-          title="New conversation (Alt+N)"
+          aria-label={t('New conversation (Alt+N)')}
+          title={t('New conversation (Alt+N)')}
           onClick={() => setCreating('direct')}
           className="grid size-10 place-items-center rounded-xl text-muted transition hover:bg-surface-2 hover:text-fg"
         >
           <SquarePen className="size-5" />
         </button>
         <div className="mt-auto flex flex-col items-center gap-2">
-          <RailLink to="/app/settings" label="Settings">
+          <RailLink to="/app/settings" label={t('Settings')}>
             <SettingsIcon className="size-5" />
           </RailLink>
           <NavLink
             to="/app/profile"
-            aria-label="Your profile"
-            title="Your profile"
+            aria-label={t('Your profile')}
+            title={t('Your profile')}
             className={({ isActive }) =>
               cx(
                 'rounded-full ring-offset-2 ring-offset-[var(--rc-sidebar)] transition',
@@ -148,19 +149,19 @@ export function AppShell() {
       {/* Mobile tab bar (hidden inside a conversation to give the composer the full width) */}
       {!inConversation && (
         <nav
-          aria-label="Main"
+          aria-label={t('Main')}
           className="flex shrink-0 items-stretch justify-around border-t border-border bg-sidebar pb-[env(safe-area-inset-bottom)] md:hidden"
         >
           {[
             {
               to: '/app',
-              label: 'Chats',
+              label: t('Chats'),
               icon: <MessageSquare className="size-5" />,
               end: true,
               badge: unread,
             },
-            { to: '/app/settings', label: 'Settings', icon: <SettingsIcon className="size-5" /> },
-            { to: '/app/profile', label: 'Profile', icon: <UserAvatar user={me} size="xs" /> },
+            { to: '/app/settings', label: t('Settings'), icon: <SettingsIcon className="size-5" /> },
+            { to: '/app/profile', label: t('Profile'), icon: <UserAvatar user={me} size="xs" /> },
           ].map((item) => (
             <NavLink
               key={item.to}
@@ -186,8 +187,8 @@ export function AppShell() {
       <Dialog
         open={searchOpen}
         onOpenChange={setSearchOpen}
-        title="Search messages"
-        description="Search across all of your conversations."
+        title={t('Search messages')}
+        description={t('Search across all of your conversations.')}
       >
         <ChatSearch
           onSelect={(message) => {

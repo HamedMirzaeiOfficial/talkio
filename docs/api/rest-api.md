@@ -1,5 +1,7 @@
 # REST API — `/api/chat/v1/`
 
+**English** · [فارسی](../fa/rest-api.md)
+
 Provided by `django_realtime_chat`. The mount point is chosen by the host (`path("api/chat/v1/", include("django_realtime_chat.urls"))`); paths below are relative to it.
 
 ## Conventions
@@ -9,6 +11,7 @@ Provided by `django_realtime_chat`. The mount point is chosen by the host (`path
 - **Bodies** are JSON unless noted. **Timestamps** are ISO 8601 with timezone.
 - **IDs:** conversations, messages and attachments are UUIDs; users keep the host's primary key type.
 - **Privacy:** a conversation, message or attachment you cannot access returns `404`, never `403`, so private resources cannot be probed.
+- **Language:** with `LocaleMiddleware` in the host, error `message`s are in the request's `Accept-Language` (e.g. `fa`). `code` and `details` are never translated; clients should decide on `code`.
 - **Errors** always use one envelope:
 
 ```json

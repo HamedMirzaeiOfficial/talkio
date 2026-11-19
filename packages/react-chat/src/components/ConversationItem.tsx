@@ -5,7 +5,7 @@ import type { KeyboardEvent } from 'react';
 import { useChatContext } from '../context.js';
 import { useMe } from '../hooks.js';
 import type { ChatStrings } from '../strings.js';
-import { cx, formatListTime, kindLabel } from '../utils.js';
+import { cx, formatListTime, formatNumber, kindLabel } from '../utils.js';
 import { EmojiText } from './media/Emoji.js';
 import { useTypingLabel } from './TypingIndicator.js';
 import { TypingDots } from './TypingIndicator.js';
@@ -22,9 +22,18 @@ export interface ConversationItemProps {
   compact?: boolean;
 }
 
-export function conversationPreview(conversation: Conversation, meId: unknown, strings: ChatStrings): string {
+/** Author label and body of the last-message preview, kept apart so each keeps its own text direction. */
+export function previewParts(
+  conversation: Conversation,
+  meId: unknown,
+  strings: ChatStrings,
+  locale?: string,
+): { author: string | null; body: string } {
   const message = conversation.last_message;
-  if (!message) return conversation.kind === 'group' ? `${conversation.member_count} members` : '';
+  if (!message) {
+    const members = `${formatNumber(conversation.member_count, locale)} ${strings.members}`;
+    return { author: null, body: conversation.kind === 'group' ? members : '' };
+  }
   const author =
     String(message.sender?.id) === String(meId)
       ? strings.you
@@ -38,6 +47,11 @@ export function conversationPreview(conversation: Conversation, meId: unknown, s
     : message.body
       ? `${media && message.kind !== 'text' ? `${media.split(' ')[0]} ` : ''}${message.body}`
       : `${media ?? ''}${sticker}`;
+  return { author: author ?? null, body };
+}
+
+export function conversationPreview(conversation: Conversation, meId: unknown, strings: ChatStrings): string {
+  const { author, body } = previewParts(conversation, meId, strings);
   return author ? `${author}: ${body}` : body;
 }
 
@@ -53,7 +67,7 @@ export function ConversationItem({
   const me = useMe();
   const typing = useTypingLabel(conversation.id);
   const unread = conversation.unread_count;
-  const preview = conversationPreview(conversation, me?.id, strings);
+  const preview = previewParts(conversation, me?.id, strings, locale);
   const avatarUser =
     conversation.kind === 'direct'
       ? conversation.peer
@@ -109,14 +123,18 @@ export function ConversationItem({
               <span className="rc:truncate">{typing}</span>
             </span>
           ) : (
-            <span
-              dir="auto"
-              className={cx('rc:truncate rc:text-[13px]', unread ? 'rc:text-fg' : 'rc:text-muted')}
-            >
+            <span className={cx('rc:truncate rc:text-[13px]', unread ? 'rc:text-fg' : 'rc:text-muted')}>
               {conversation.last_message?.pinned_at && (
                 <Pin className="rc:me-1 rc:inline rc:size-3" aria-hidden />
               )}
-              {preview ? <EmojiText text={preview} /> : ' '}
+              {preview.author && `${preview.author}: `}
+              {preview.body ? (
+                <bdi>
+                  <EmojiText text={preview.body} />
+                </bdi>
+              ) : (
+                !preview.author && ' '
+              )}
             </span>
           )}
           <UnreadBadge count={unread} className="rc:ms-auto" />

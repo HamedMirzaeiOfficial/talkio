@@ -1,5 +1,7 @@
 # Design system
 
+**English** · [فارسی](fa/design-system.md)
+
 One token set drives both the React library and the standalone app. Tokens are CSS custom properties defined in `packages/react-chat/src/styles/base.css`; the app maps them into its own Tailwind theme (`apps/web/src/styles.css`), so app chrome and chat components cannot drift apart.
 
 ## Tokens
@@ -39,6 +41,9 @@ Contrast was chosen for WCAG AA on the surfaces where each token is used (body t
 - Message bodies, titles, names and inputs use `dir="auto"`, so Persian/Arabic text is right-aligned inside an otherwise LTR layout; `[dir=rtl]` text switches to `--rc-font-rtl`.
 - Layout uses logical properties (`ps/pe`, `start/end`, `rounded-es/ee`), so the whole UI mirrors when the host sets `dir="rtl"` on a container.
 - Unicode bidi override characters are stripped server-side to prevent visually reordered ("Trojan Source") text.
+- The interface itself is available in English and Persian. The app sets `<html lang dir>` before first paint; the components take `strings={faStrings}` and `locale="fa-IR"`, which also switches digits, dates and relative times. Previews keep the author label in the page direction and wrap the message body in `<bdi>`, so mixed-language text never swaps its punctuation.
+- Directional icons (back/forward arrows, "open" arrows) mirror with `rtl:-scale-x-100` or `rtl:rotate-180`; technical values (usernames, emails, codes, keyboard shortcuts, code samples) carry `dir="ltr"`.
+- The language switch labels each option in its own language ("English", "فارسی") so anyone can find theirs.
 
 ## Accessibility
 

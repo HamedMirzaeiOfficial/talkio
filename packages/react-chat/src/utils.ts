@@ -73,16 +73,28 @@ export function formatListTime(iso: string | null | undefined, locale?: string, 
   return new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric' }).format(date);
 }
 
-export function formatRelative(iso: string | null | undefined, now = Date.now()): string {
-  if (!iso) return 'a while ago';
+/** Locale-aware digits and separators (e.g. Persian digits for `fa`). */
+export function formatNumber(value: number, locale?: string): string {
+  return new Intl.NumberFormat(locale).format(value);
+}
+
+/** "5 minutes ago", "yesterday", in the given locale; `fallback` when the time is unknown. */
+export function formatRelative(
+  iso: string | null | undefined,
+  now = Date.now(),
+  locale?: string,
+  fallback = 'a while ago',
+): string {
+  if (!iso) return fallback;
+  // Intl words the phrase per language ("2 min. ago", «۲ دقیقه پیش», "yesterday", «دیروز»).
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto', style: 'short' });
   const seconds = Math.max(0, Math.round((now - Date.parse(iso)) / 1000));
-  if (seconds < 60) return 'just now';
+  if (seconds < 60) return rtf.format(0, 'second');
   const minutes = Math.round(seconds / 60);
-  if (minutes < 60) return `${minutes} min ago`;
+  if (minutes < 60) return rtf.format(-minutes, 'minute');
   const hours = Math.round(minutes / 60);
-  if (hours < 24) return `${hours} h ago`;
-  const days = Math.round(hours / 24);
-  return days === 1 ? 'yesterday' : `${days} days ago`;
+  if (hours < 24) return rtf.format(-hours, 'hour');
+  return rtf.format(-Math.round(hours / 24), 'day');
 }
 
 export function formatBytes(size: number): string {

@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 
 import { useChatContext } from '../context.js';
 import { useConversation } from '../hooks.js';
-import { cx } from '../utils.js';
+import { cx, formatNumber } from '../utils.js';
 import { PresenceIndicator } from './PresenceIndicator.js';
 import { IconButton, Skeleton } from './primitives.js';
 import { TypingDots, useTypingLabel } from './TypingIndicator.js';
@@ -29,7 +29,7 @@ export function ConversationHeader({
   className,
 }: ConversationHeaderProps) {
   const conversation = useConversation(conversationId);
-  const { strings } = useChatContext();
+  const { strings, locale } = useChatContext();
   const typing = useTypingLabel(conversationId);
   const online = conversation?.members.filter((m) => m.online).length ?? 0;
   return (
@@ -77,8 +77,8 @@ export function ConversationHeader({
                 <PresenceIndicator userId={conversation.peer.id} className="rc:text-[12px]" />
               ) : (
                 <span className="rc:text-muted">
-                  {conversation.member_count} {strings.members}
-                  {online > 0 && ` · ${online} ${strings.online.toLowerCase()}`}
+                  {formatNumber(conversation.member_count, locale)} {strings.members}
+                  {online > 0 && ` · ${formatNumber(online, locale)} ${strings.online.toLowerCase()}`}
                 </span>
               )}
             </span>

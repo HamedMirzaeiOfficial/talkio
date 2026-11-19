@@ -1,5 +1,7 @@
 # فصل ۵ — امنیت
 
+[English](en/05-security.md) · **فارسی**
+
 فایل‌های این فصل: `apps/server/accounts/api.py`، `accounts/authentication.py`، `ws/middleware.py`، `ws/tickets.py`، `files.py`، `api/views.py::_harden`، `apps/server/tests/test_hardening.py`، [security.md](../security.md)
 
 ## ۱. احراز هویت با session و CSRF

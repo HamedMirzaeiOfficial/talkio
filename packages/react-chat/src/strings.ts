@@ -16,9 +16,14 @@ export const defaultStrings = {
   online: 'Online',
   offline: 'Offline',
   lastSeen: 'Last seen',
+  aWhileAgo: 'a while ago',
   members: 'members',
   typingOne: 'is typing',
   typingMany: 'are typing',
+  /** Joins two names in the typing line: "Sara & Ali are typing". */
+  and: '&',
+  /** "3 people are typing". */
+  people: 'people',
   messagePlaceholder: 'Write a message…',
   send: 'Send',
   attach: 'Attach files',
@@ -46,6 +51,8 @@ export const defaultStrings = {
   cancel: 'Cancel',
   save: 'Save',
   newMessages: 'New messages',
+  /** "3 unread" (badge label for screen readers). */
+  unread: 'unread',
   jumpToLatest: 'Jump to latest',
   loadingOlder: 'Loading earlier messages…',
   beginning: 'This is the beginning of the conversation.',
@@ -77,6 +84,9 @@ export const defaultStrings = {
   openChat: 'Open chat',
   closeChat: 'Close chat',
   chooseConversation: 'Choose a conversation to start messaging.',
+  conversationNotFound: 'Conversation not found',
+  conversationNotFoundHint: 'It may have been removed, or you are no longer a member.',
+  loading: 'Loading',
   settings: 'Chat settings',
   theme: 'Theme',
   themeSystem: 'System',

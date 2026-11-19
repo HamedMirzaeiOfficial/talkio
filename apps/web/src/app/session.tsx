@@ -1,6 +1,6 @@
 import type { ChatClient } from '@realtime-chat/client';
 import { selectUnreadTotal } from '@realtime-chat/client';
-import { ChatProvider, useCreateChatClient } from '@realtime-chat/react';
+import { ChatProvider, faStrings, useCreateChatClient } from '@realtime-chat/react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { useEffect } from 'react';
@@ -12,6 +12,7 @@ import { authApi } from '../lib/auth';
 import { createAppChatClient } from '../lib/chat';
 import { PREFERENCES_KEY } from '../lib/config';
 import { notificationsEnabled } from '../lib/notifications';
+import { intlLocale, t, useLang } from '../lib/i18n';
 
 export function useSession() {
   return useQuery({ queryKey: ['session'], queryFn: authApi.session, staleTime: 60_000, retry: 1 });
@@ -43,6 +44,8 @@ export function ChatSession({ userId, children }: { userId: number; children: Re
 
 function ChatSessionInner({ client, children }: { client: ChatClient; children: ReactNode }) {
   const toast = useToast();
+  // The chat components ship their own Persian strings; the client and its socket stay alive on switch.
+  const lang = useLang();
   const navigate = useNavigate();
 
   // Unread count in the tab title.
@@ -65,10 +68,10 @@ function ChatSessionInner({ client, children }: { client: ChatClient; children: 
     () =>
       client.on('incoming', ({ conversation, message }) => {
         if (!document.hidden || !notificationsEnabled() || Notification.permission !== 'granted') return;
-        const notification = new Notification(conversation?.title ?? 'New message', {
+        const notification = new Notification(conversation?.title ?? t('New message'), {
           body: message.is_deleted
             ? ''
-            : `${message.sender?.display_name ?? ''}: ${message.body || '📎 Attachment'}`,
+            : `${message.sender?.display_name ?? ''}: ${message.body || `📎 ${t('Attachment')}`}`,
           tag: message.conversation_id,
         });
         notification.onclick = () => {
@@ -84,6 +87,8 @@ function ChatSessionInner({ client, children }: { client: ChatClient; children: 
       client={client}
       storageKey={PREFERENCES_KEY}
       emoji={EMOJI}
+      strings={lang === 'fa' ? faStrings : undefined}
+      locale={intlLocale()}
       onError={(error) => !QUIET.has(error.code) && toast(error.message, 'error')}
     >
       {children}

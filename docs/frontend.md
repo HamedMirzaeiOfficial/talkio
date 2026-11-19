@@ -1,5 +1,7 @@
 # Frontend technical reference
 
+**English** · [فارسی](fa/frontend.md)
+
 Three layers, each usable on its own:
 
 | Layer | Path | Depends on |
@@ -61,7 +63,7 @@ stateDiagram-v2
 - **Browser signals:** `online` and tab `visibilitychange` → `reconnectNow()`; `offline` closes an open socket immediately (browsers can keep it "open" for minutes) and shows the offline state.
 - **Request/ack:** `request(event)` adds a `request_id`, resolves on the matching `ack`, rejects on the matching `error` (`kind: socket`) or after `requestTimeoutMs` (`ack_timeout`); all pending requests reject on disconnect (`connection_lost`).
 - `ready` events carry `recovered: true` after the first successful session, which triggers recovery in the client.
-- `resolveUrl` hook: with `adapter.useSocketTicket`, the client fetches a fresh ticket before **every** attempt and appends `?ticket=`.
+- `resolveUrl` hook: before **every** attempt the client appends the UI language as `?lang=` and, with `adapter.useSocketTicket`, fetches a fresh ticket and appends `?ticket=`.
 
 ### 1.4 Store (`store.ts`)
 
@@ -135,7 +137,7 @@ Retries (`retryMessage`) re-upload only the files that are not uploaded yet and 
 | `autoStart` | Calls `client.start()` on mount (default true). |
 | `preferences` / `onPreferencesChange` / `storageKey` | Controlled or persisted (`localStorage`) theme, Enter-to-send, compact mode. |
 | `tokens` | Token overrides → inline `--rc-*` variables on every root. |
-| `strings` / `locale` | Localization (all UI text lives in `strings.ts`). |
+| `strings` / `locale` | Localization: all UI text lives in `strings.ts`; `faStrings` (`locales/fa.ts`) is the complete Persian set, and `locale` drives dates, relative times and digits through `Intl`. |
 | `emoji` | `{ baseUrl }` → image emoji (see §4.1). |
 | `onError` | Receives every reported `ChatError` (the app shows toasts). |
 
@@ -233,6 +235,7 @@ Tests: `test/styles.test.tsx` checks that the reset precedes the utilities, that
 | Notifications | Unread count in the title; optional desktop notifications for messages while the tab is hidden (`lib/notifications.ts`). |
 | Emoji assets | `vite.config.ts` plugin `emojiAssets()` copies `@twemoji/svg` into `public/emoji/` in the `config` hook (before Vite indexes `public/`; `buildStart` is too late for the dev server). The folder is gitignored. |
 | Dev server | `127.0.0.1:4801`, proxies `/api`, `/media`, `/social-auth`, `/ws` to `TALKIO_API_TARGET` (default `:4800`) so the browser sees one origin. `VITE_BASE` supports sub-path hosting; all API URLs derive from `BASE_URL`. |
+| Language | `lib/i18n.ts`: `t(english, vars)` with `src/locales/fa.json` (English text is the key), `msg()` for constants, `useLang()`/`setLang()`. `index.html` sets `<html lang dir>` before first paint from the saved choice (`talkio:lang`) or the browser language. Switching remounts the app UI below `ChatSession`, so the chat client and its socket survive. `ChatProvider` gets `faStrings` and `intlLocale()`; the SDK and `lib/auth.ts` send the language as `Accept-Language` (and `?lang=` on the socket). `LangSwitch` sits in the auth header, the landing page and Settings. `npm run i18n:check` fails when a string has no Persian entry. |
 | Icons | `public/logo.svg`, `favicon.svg`, `apple-touch-icon.png`, `icon-192/512.png`, `manifest.webmanifest`; `LogoMark` component in `components/ui.tsx`. |
 
 ## 6. Build and packaging
@@ -249,8 +252,8 @@ Tests: `test/styles.test.tsx` checks that the reset precedes the utilities, that
 | --- | --- | --- |
 | SDK `packages/chat-client/test/` | Vitest (node) + `FakeWebSocket` + route-table `fakeFetch` | HTTP errors, auth headers, cancellation, backoff, 4401, heartbeat timeout, request/ack, optimistic send, ack→HTTP fallback, failure/retry, unread, read debounce, gap fill, recovery with edits, typing throttle, tickets, dispose, voice/sticker sends |
 | Library `packages/react-chat/test/` | Vitest (jsdom) + Testing Library, real `ChatClient` over the fakes | Lists, inert rendering, Enter/Shift+Enter, optimistic → sent, retry with same id, reply/Esc focus, typing, auto read, widget, banner, preferences/tokens, StrictMode client lifecycle, emoji picker/skin tones/images, stickers, voice player, waveform, built CSS |
-| App `apps/web/src/**/*.test.tsx` | Vitest | Registration validation and server field errors |
+| App `apps/web/src/**/*.test.tsx` | Vitest | Registration validation and server field errors; translation, direction and a page rendered in Persian |
 | E2E `apps/web/e2e/` | Playwright (desktop, Pixel 7, example host) | Sign-in (phone + 1234, password, errors), registration, real-time delivery between two browsers, unread/read receipts, typing, menu actions, keyboard, offline → recovery with gap fill, groups, mobile navigation, emoji/reactions, stickers, voice recording with Chromium's fake microphone, embedded widget style isolation both ways |
-| Screenshots | `e2e/screenshots.spec.ts` | README images from the running app |
+| Screenshots | `e2e/screenshots.spec.ts` | README images from the running app, including the Persian ones (`*-fa.png`) |
 
 Playwright can use a specific browser binary through `PLAYWRIGHT_CHROMIUM_PATH`; CI uses the standard download.

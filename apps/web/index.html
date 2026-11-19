@@ -17,6 +17,18 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <title>Talkio</title>
     <script>
+      // Language and direction before first paint: the saved choice, else the browser's language.
+      (function () {
+        var l = 'en';
+        try {
+          var s = localStorage.getItem('talkio:lang');
+          if (s === 'fa' || s === 'en') l = s;
+          else if (/^fa\b/i.test((navigator.languages && navigator.languages[0]) || navigator.language || ''))
+            l = 'fa';
+        } catch (e) {}
+        document.documentElement.lang = l;
+        document.documentElement.dir = l === 'fa' ? 'rtl' : 'ltr';
+      })();
       // Apply the saved theme before first paint to avoid a flash.
       try {
         var t = JSON.parse(localStorage.getItem('talkio:preferences') || '{}').theme || 'dark';

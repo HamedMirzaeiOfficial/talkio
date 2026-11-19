@@ -1,5 +1,6 @@
 import { MotionConfig } from 'motion/react';
-import { lazy, Suspense } from 'react';
+import type { ReactNode } from 'react';
+import { Fragment, lazy, Suspense } from 'react';
 import { createBrowserRouter, Navigate, Outlet, RouterProvider, useLocation } from 'react-router-dom';
 
 import { FullScreenSpinner } from '../components/FullScreenSpinner';
@@ -8,6 +9,7 @@ import { Login } from '../routes/Login';
 import { NotFound } from '../routes/NotFound';
 import { Register } from '../routes/Register';
 import { ChatSession, useSession } from './session';
+import { useLang } from '../lib/i18n';
 
 const AppShell = lazy(() => import('../components/AppShell').then((m) => ({ default: m.AppShell })));
 const Workspace = lazy(() => import('../routes/Workspace').then((m) => ({ default: m.Workspace })));
@@ -24,21 +26,45 @@ function RequireAuth() {
   return (
     <ChatSession userId={user.id}>
       <Suspense fallback={<FullScreenSpinner />}>
-        <AppShell />
+        <ByLang>
+          <AppShell />
+        </ByLang>
       </Suspense>
     </ChatSession>
   );
 }
 
+/**
+ * Remounts its children when the language changes so every t() runs again. It sits below ChatSession,
+ * so switching language never disposes the chat client or drops the WebSocket.
+ */
+function ByLang({ children }: { children: ReactNode }) {
+  const lang = useLang();
+  return <Fragment key={lang}>{children}</Fragment>;
+}
+
 function GuestOnly() {
   const session = useSession();
   if (session.isPending) return <FullScreenSpinner />;
-  return session.data?.user ? <Navigate to="/app" replace /> : <Outlet />;
+  return session.data?.user ? (
+    <Navigate to="/app" replace />
+  ) : (
+    <ByLang>
+      <Outlet />
+    </ByLang>
+  );
 }
 
 const router = createBrowserRouter(
   [
-    { path: '/', element: <Landing /> },
+    {
+      path: '/',
+      element: (
+        <ByLang>
+          <Landing />
+        </ByLang>
+      ),
+    },
     {
       element: <GuestOnly />,
       children: [
@@ -57,7 +83,14 @@ const router = createBrowserRouter(
         { path: 'settings', element: <Settings /> },
       ],
     },
-    { path: '*', element: <NotFound /> },
+    {
+      path: '*',
+      element: (
+        <ByLang>
+          <NotFound />
+        </ByLang>
+      ),
+    },
   ],
   { basename: import.meta.env.BASE_URL.replace(/\/$/, '') || '/' },
 );

@@ -1,5 +1,7 @@
 # Security model
 
+**English** · [فارسی](fa/security.md)
+
 ## Authorization
 
 - Every operation resolves the conversation through the caller's **active membership** (`left_at IS NULL`). Removed members lose access immediately (REST and new socket events; the consumer unsubscribes on `conversation.removed`).
@@ -39,6 +41,7 @@
 
 - Logs carry event types and IDs, not message bodies or credentials. The admin list view shows message metadata only.
 - Deleted messages keep a tombstone (id, seq, timestamps) with the body and attachments removed.
+- Error messages come back in the request's language (`Accept-Language`, or `?lang=` on the socket); the error `code` is always the same English identifier, so clients decide on the code, never on the text.
 
 ## Known limitations
 

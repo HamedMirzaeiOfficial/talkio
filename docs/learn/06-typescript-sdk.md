@@ -1,5 +1,7 @@
 # فصل ۶ — SDK تایپ‌اسکریپت: شبکه‌ی ناپایدار، state پایدار
 
+[English](en/06-typescript-sdk.md) · **فارسی**
+
 فایل‌های این فصل: `packages/chat-client/src/{http,socket,store,client,auth,errors}.ts` و تست‌ها در `packages/chat-client/test/`
 
 ## ۱. چرا SDK مستقل از React؟

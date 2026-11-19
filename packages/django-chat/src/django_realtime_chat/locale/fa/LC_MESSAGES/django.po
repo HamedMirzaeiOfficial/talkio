@@ -1,0 +1,365 @@
+# Persian translations. Edit msgstr values, then run: python scripts/i18n.py compile
+msgid ""
+msgstr ""
+"Project-Id-Version: talkio\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: fa\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: packages/django-chat/src/django_realtime_chat/services/messages.py:240
+msgid "%(name)s must be an integer."
+msgstr "%(name)s باید عدد صحیح باشد."
+
+#: packages/django-chat/src/django_realtime_chat/services/messages.py:243
+msgid "%(name)s must be positive."
+msgstr "%(name)s باید مثبت باشد."
+
+#: packages/django-chat/src/django_realtime_chat/services/attachments.py:72
+msgid "A file is required."
+msgstr "یک فایل لازم است."
+
+#: packages/django-chat/src/django_realtime_chat/services/conversations.py:183
+msgid "A group name is required."
+msgstr "نام گروه لازم است."
+
+#: packages/django-chat/src/django_realtime_chat/services/messages.py:139
+msgid "A message needs text or an attachment."
+msgstr "پیام باید متن یا پیوست داشته باشد."
+
+#: packages/django-chat/src/django_realtime_chat/services/messages.py:137
+msgid "A sticker is sent on its own."
+msgstr "استیکر به‌تنهایی فرستاده می‌شود."
+
+#: packages/django-chat/src/django_realtime_chat/models.py:88
+msgid "Admin"
+msgstr "مدیر"
+
+#: packages/django-chat/src/django_realtime_chat/services/attachments.py:130
+msgid "Attachment not found."
+msgstr "پیوست پیدا نشد."
+
+#: packages/django-chat/src/django_realtime_chat/services/messages.py:204
+msgid "attachment_ids must be a list."
+msgstr "attachment_ids باید فهرست باشد."
+
+#: packages/django-chat/src/django_realtime_chat/services/attachments.py:68
+msgid "Attachments are disabled."
+msgstr "پیوست‌ها غیرفعال‌اند."
+
+#: packages/django-chat/src/django_realtime_chat/services/messages.py:224
+msgid "Attachments must be your own pending uploads in this conversation."
+msgstr "پیوست‌ها باید آپلودهای ارسال‌نشدهٔ خود شما در همین گفت‌وگو باشند."
+
+#: packages/django-chat/src/django_realtime_chat/services/messages.py:39
+msgid "body must be a string."
+msgstr "body باید رشته باشد."
+
+#: packages/django-chat/src/django_realtime_chat/services/conversations.py:118
+msgid "Choose another user for a direct conversation."
+msgstr "برای گفت‌وگوی مستقیم کاربر دیگری انتخاب کنید."
+
+#: packages/django-chat/src/django_realtime_chat/services/conversations.py:223
+msgid "Choose at least one user."
+msgstr "حداقل یک کاربر انتخاب کنید."
+
+#: packages/django-chat/src/django_realtime_chat/services/messages.py:57
+msgid "client_id must be 1-64 URL-safe characters."
+msgstr "client_id باید ۱ تا ۶۴ نویسهٔ مجاز در URL باشد."
+
+#: packages/django-chat/src/django_realtime_chat/services/conversations.py:38
+msgid "Conversation not found."
+msgstr "گفت‌وگو پیدا نشد."
+
+#: packages/django-chat/src/django_realtime_chat/services/messages.py:340
+msgid "Deleted messages cannot be edited."
+msgstr "پیام حذف‌شده را نمی‌توان ویرایش کرد."
+
+#: packages/django-chat/src/django_realtime_chat/services/messages.py:108
+msgid "Deleted messages cannot be forwarded."
+msgstr "پیام حذف‌شده را نمی‌توان هدایت کرد."
+
+#: packages/django-chat/src/django_realtime_chat/services/messages.py:419
+msgid "Deleted messages cannot be pinned."
+msgstr "پیام حذف‌شده را نمی‌توان سنجاق کرد."
+
+#: packages/django-chat/src/django_realtime_chat/services/messages.py:400
+msgid "Deleted messages cannot be reacted to."
+msgstr "به پیام حذف‌شده نمی‌توان واکنش نشان داد."
+
+#: packages/django-chat/src/django_realtime_chat/models.py:51
+msgid "Direct"
+msgstr "مستقیم"
+
+#: packages/django-chat/src/django_realtime_chat/services/attachments.py:32
+msgid "duration must be a number of seconds."
+msgstr "duration باید تعداد ثانیه باشد."
+
+#: packages/django-chat/src/django_realtime_chat/ws/consumer.py:167
+msgid "Events must be JSON objects with a 'type'."
+msgstr "رویدادها باید شیء JSON با فیلد 'type' باشند."
+
+#: packages/django-chat/src/django_realtime_chat/api/views.py:87
+msgid "Expected a JSON object."
+msgstr "یک شیء JSON انتظار می‌رفت."
+
+#: packages/django-chat/src/django_realtime_chat/models.py:52
+msgid "Group"
+msgstr "گروه"
+
+#: packages/django-chat/src/django_realtime_chat/services/conversations.py:153
+msgid "Group conversations are disabled."
+msgstr "گفت‌وگوی گروهی غیرفعال است."
+
+#: packages/django-chat/src/django_realtime_chat/services/messages.py:221
+msgid "Invalid attachment id."
+msgstr "شناسهٔ پیوست نامعتبر است."
+
+#: packages/django-chat/src/django_realtime_chat/services/conversations.py:74
+msgid "Invalid cursor."
+msgstr "مکان‌نما (cursor) نامعتبر است."
+
+#: packages/django-chat/src/django_realtime_chat/api/views.py:169
+msgid "kind must be 'direct' or 'group'."
+msgstr "kind باید 'direct' یا 'group' باشد."
+
+#: packages/django-chat/src/django_realtime_chat/models.py:89
+msgid "Member"
+msgstr "عضو"
+
+#: packages/django-chat/src/django_realtime_chat/services/conversations.py:293
+msgid "Member not found."
+msgstr "عضو پیدا نشد."
+
+#: packages/django-chat/src/django_realtime_chat/services/conversations.py:100
+msgid "member_ids must be a list of user ids."
+msgstr "member_ids باید فهرستی از شناسهٔ کاربران باشد."
+
+#: packages/django-chat/src/django_realtime_chat/services/messages.py:69
+msgid "Message not found."
+msgstr "پیام پیدا نشد."
+
+#: packages/django-chat/src/django_realtime_chat/services/messages.py:43
+msgid "Messages are limited to %(max_message_length)s characters."
+msgstr "پیام‌ها حداکثر %(max_message_length)s نویسه می‌توانند باشند."
+
+#: packages/django-chat/src/django_realtime_chat/errors.py:40
+msgid "Not found."
+msgstr "پیدا نشد."
+
+#: packages/django-chat/src/django_realtime_chat/services/conversations.py:103
+msgid "One or more users cannot be added."
+msgstr "یک یا چند کاربر را نمی‌توان اضافه کرد."
+
+#: packages/django-chat/src/django_realtime_chat/services/messages.py:342
+msgid "Only the sender can edit this message."
+msgstr "فقط فرستنده می‌تواند این پیام را ویرایش کند."
+
+#: packages/django-chat/src/django_realtime_chat/services/attachments.py:137
+msgid "Only unsent uploads can be removed."
+msgstr "فقط آپلودهای ارسال‌نشده را می‌توان حذف کرد."
+
+#: packages/django-chat/src/django_realtime_chat/models.py:87
+msgid "Owner"
+msgstr "مالک"
+
+#: packages/django-chat/src/django_realtime_chat/services/messages.py:392
+msgid "Reactions are disabled."
+msgstr "واکنش‌ها غیرفعال‌اند."
+
+#: packages/django-chat/src/django_realtime_chat/apps.py:8
+msgid "Realtime chat"
+msgstr "گفت‌وگوی بلادرنگ"
+
+#: packages/django-chat/src/django_realtime_chat/services/messages.py:307
+msgid "Search must contain between 2 and 100 characters."
+msgstr "جست‌وجو باید بین ۲ تا ۱۰۰ نویسه باشد."
+
+#: packages/django-chat/src/django_realtime_chat/services/conversations.py:333
+msgid "seq must be an integer."
+msgstr "seq باید عدد صحیح باشد."
+
+#: packages/django-chat/src/django_realtime_chat/services/stickers.py:46
+msgid "Sticker files must be at most 512 KB."
+msgstr "فایل استیکر حداکثر ۵۱۲ کیلوبایت می‌تواند باشد."
+
+#: packages/django-chat/src/django_realtime_chat/services/stickers.py:40
+msgid "Sticker not found."
+msgstr "استیکر پیدا نشد."
+
+#: packages/django-chat/src/django_realtime_chat/services/stickers.py:28
+msgid "Stickers are disabled."
+msgstr "استیکرها غیرفعال‌اند."
+
+#: packages/django-chat/src/django_realtime_chat/services/stickers.py:59
+msgid "Stickers must be at most 512×512 pixels."
+msgstr "استیکر حداکثر ۵۱۲×۵۱۲ پیکسل می‌تواند باشد."
+
+#: packages/django-chat/src/django_realtime_chat/services/stickers.py:52
+msgid "Stickers must be PNG, WebP or GIF images."
+msgstr "استیکر باید تصویر PNG، WebP یا GIF باشد."
+
+#: packages/django-chat/src/django_realtime_chat/services/conversations.py:192
+msgid "The description is too long."
+msgstr "توضیحات خیلی طولانی است."
+
+#: packages/django-chat/src/django_realtime_chat/services/messages.py:345
+msgid "The edit window has passed."
+msgstr "مهلت ویرایش گذشته است."
+
+#: packages/django-chat/src/django_realtime_chat/services/attachments.py:74
+msgid "The file is empty."
+msgstr "فایل خالی است."
+
+#: packages/django-chat/src/django_realtime_chat/files.py:130
+msgid "The file is not a valid image."
+msgstr "فایل یک تصویر معتبر نیست."
+
+#: packages/django-chat/src/django_realtime_chat/services/attachments.py:77
+msgid "The file is too large."
+msgstr "فایل خیلی بزرگ است."
+
+#: packages/django-chat/src/django_realtime_chat/services/conversations.py:185
+msgid "The group name is too long."
+msgstr "نام گروه خیلی طولانی است."
+
+#: packages/django-chat/src/django_realtime_chat/files.py:134
+msgid "The image is too large."
+msgstr "تصویر خیلی بزرگ است."
+
+#: packages/django-chat/src/django_realtime_chat/services/messages.py:146
+msgid "The replied message is not in this conversation."
+msgstr "پیامی که به آن پاسخ داده شده در این گفت‌وگو نیست."
+
+#: packages/django-chat/src/django_realtime_chat/errors.py:13
+msgid "The request is invalid."
+msgstr "درخواست نامعتبر است."
+
+#: packages/django-chat/src/django_realtime_chat/services/users.py:26
+msgid "The search is too long."
+msgstr "عبارت جست‌وجو خیلی طولانی است."
+
+#: packages/django-chat/src/django_realtime_chat/ws/consumer.py:175
+msgid "The server could not process this event."
+msgstr "سرور نتوانست این رویداد را پردازش کند."
+
+#: packages/django-chat/src/django_realtime_chat/services/attachments.py:36
+msgid "The voice message is too long."
+msgstr "پیام صوتی خیلی طولانی است."
+
+#: packages/django-chat/src/django_realtime_chat/errors.py:52
+msgid "This feature is disabled."
+msgstr "این قابلیت غیرفعال است."
+
+#: packages/django-chat/src/django_realtime_chat/services/attachments.py:90
+msgid "This file type is not allowed."
+msgstr "این نوع فایل مجاز نیست."
+
+#: packages/django-chat/src/django_realtime_chat/services/messages.py:396
+msgid "This reaction is not supported."
+msgstr "این واکنش پشتیبانی نمی‌شود."
+
+#: packages/django-chat/src/django_realtime_chat/services/messages.py:209
+msgid "Too many attachments."
+msgstr "پیوست‌ها بیش از حد مجاز است."
+
+#: packages/django-chat/src/django_realtime_chat/services/conversations.py:160
+msgid "Too many members."
+msgstr "اعضا بیش از حد مجاز است."
+
+#: packages/django-chat/src/django_realtime_chat/errors.py:58
+msgid "Too many requests. Please slow down."
+msgstr "درخواست‌ها زیاد است. لطفاً کمی آهسته‌تر."
+
+#: packages/django-chat/src/django_realtime_chat/services/attachments.py:86
+msgid "Too many unsent uploads. Send or remove some first."
+msgstr "آپلودهای ارسال‌نشده زیاد است. اول چند تا را بفرستید یا حذف کنید."
+
+#: packages/django-chat/src/django_realtime_chat/services/conversations.py:61
+msgid "Unknown conversation kind."
+msgstr "نوع گفت‌وگو ناشناخته است."
+
+#: packages/django-chat/src/django_realtime_chat/services/conversations.py:308
+msgid "Unknown role."
+msgstr "نقش ناشناخته است."
+
+#: packages/django-chat/src/django_realtime_chat/services/stickers.py:32
+msgid "Unknown sticker."
+msgstr "استیکر ناشناخته است."
+
+#: packages/django-chat/src/django_realtime_chat/ws/consumer.py:200
+msgid "Unsupported event type %(value)s."
+msgstr "نوع رویداد %(value)s پشتیبانی نمی‌شود."
+
+#: packages/django-chat/src/django_realtime_chat/services/messages.py:280
+msgid "updated_since must be an ISO 8601 timestamp."
+msgstr "updated_since باید زمانی با قالب ISO 8601 باشد."
+
+#: packages/django-chat/src/django_realtime_chat/services/messages.py:269
+msgid "Use either before or after."
+msgstr "فقط یکی از before یا after را استفاده کنید."
+
+#: packages/django-chat/src/django_realtime_chat/services/users.py:50
+msgid "User not found."
+msgstr "کاربر پیدا نشد."
+
+#: packages/django-chat/src/django_realtime_chat/services/users.py:23
+msgid "User search is disabled."
+msgstr "جست‌وجوی کاربران غیرفعال است."
+
+#: packages/django-chat/src/django_realtime_chat/services/attachments.py:27
+msgid "Voice messages are disabled."
+msgstr "پیام صوتی غیرفعال است."
+
+#: packages/django-chat/src/django_realtime_chat/services/attachments.py:92
+msgid "Voice messages must be audio."
+msgstr "پیام صوتی باید فایل صوتی باشد."
+
+#: packages/django-chat/src/django_realtime_chat/services/attachments.py:44
+msgid "waveform must be a JSON list."
+msgstr "waveform باید فهرست JSON باشد."
+
+#: packages/django-chat/src/django_realtime_chat/services/attachments.py:51
+msgid "waveform must be up to %(max_waveform_bars)s integers 0-100."
+msgstr "waveform باید حداکثر %(max_waveform_bars)s عدد صحیح بین ۰ تا ۱۰۰ باشد."
+
+#: packages/django-chat/src/django_realtime_chat/services/conversations.py:220
+msgid "You cannot add members to this conversation."
+msgstr "نمی‌توانید به این گفت‌وگو عضو اضافه کنید."
+
+#: packages/django-chat/src/django_realtime_chat/services/conversations.py:319
+msgid "You cannot change this member's role."
+msgstr "نمی‌توانید نقش این عضو را تغییر دهید."
+
+#: packages/django-chat/src/django_realtime_chat/services/conversations.py:155
+msgid "You cannot create groups."
+msgstr "نمی‌توانید گروه بسازید."
+
+#: packages/django-chat/src/django_realtime_chat/services/messages.py:370
+msgid "You cannot delete this message."
+msgstr "نمی‌توانید این پیام را حذف کنید."
+
+#: packages/django-chat/src/django_realtime_chat/services/conversations.py:201
+msgid "You cannot edit this conversation."
+msgstr "نمی‌توانید این گفت‌وگو را ویرایش کنید."
+
+#: packages/django-chat/src/django_realtime_chat/services/conversations.py:123
+msgid "You cannot message this user."
+msgstr "نمی‌توانید به این کاربر پیام بدهید."
+
+#: packages/django-chat/src/django_realtime_chat/services/messages.py:421
+msgid "You cannot pin messages in this conversation."
+msgstr "نمی‌توانید در این گفت‌وگو پیام سنجاق کنید."
+
+#: packages/django-chat/src/django_realtime_chat/services/conversations.py:268
+msgid "You cannot remove this member."
+msgstr "نمی‌توانید این عضو را حذف کنید."
+
+#: packages/django-chat/src/django_realtime_chat/services/messages.py:132
+msgid "You cannot send messages in this conversation."
+msgstr "نمی‌توانید در این گفت‌وگو پیام بفرستید."
+
+#: packages/django-chat/src/django_realtime_chat/errors.py:46
+msgid "You do not have permission to perform this action."
+msgstr "اجازهٔ انجام این کار را ندارید."

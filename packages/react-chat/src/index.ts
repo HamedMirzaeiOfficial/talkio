@@ -1,4 +1,10 @@
-export { ChatProvider, defaultPreferences, useChatContext, useThemeRoot } from './context.js';
+export {
+  ChatProvider,
+  defaultPreferences,
+  useChatContext,
+  useOptionalChatContext,
+  useThemeRoot,
+} from './context.js';
 export type { ChatPreferences, ChatProviderProps, ThemeMode, ThemeTokens } from './context.js';
 export {
   useAttachmentUrl,
@@ -20,8 +26,9 @@ export {
   useUserSearch,
 } from './hooks.js';
 export { defaultStrings } from './strings.js';
+export { faStrings } from './locales/fa.js';
 export type { ChatStrings } from './strings.js';
-export { formatDuration, kindLabel, textDirection, tokenize } from './utils.js';
+export { formatDuration, formatNumber, formatRelative, kindLabel, textDirection, tokenize } from './utils.js';
 
 export { AttachmentPreview } from './components/AttachmentPreview.js';
 export type { AttachmentPreviewProps } from './components/AttachmentPreview.js';

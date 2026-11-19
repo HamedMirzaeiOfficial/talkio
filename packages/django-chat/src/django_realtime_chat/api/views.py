@@ -6,6 +6,7 @@ from typing import Any
 from urllib.parse import quote
 
 from django.http import FileResponse
+from django.utils.translation import gettext
 from rest_framework import exceptions as drf_exceptions
 from rest_framework import status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
@@ -83,7 +84,7 @@ def _flatten(detail: Any) -> str:
 
 def _data(request: Request) -> dict[str, Any]:
     if not isinstance(request.data, dict):
-        raise ValidationFailed("Expected a JSON object.", code="invalid_body")
+        raise ValidationFailed(gettext("Expected a JSON object."), code="invalid_body")
     return request.data
 
 
@@ -165,7 +166,7 @@ class ConversationListView(ChatAPIView):
             )
             created = True
         else:
-            raise ValidationFailed("kind must be 'direct' or 'group'.", code="invalid_kind")
+            raise ValidationFailed(gettext("kind must be 'direct' or 'group'."), code="invalid_kind")
         return Response(
             {"conversation": conversation_payload(conv, request.user), "created": created},
             status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,

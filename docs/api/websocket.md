@@ -1,5 +1,7 @@
 # WebSocket protocol — version 1
 
+**English** · [فارسی](../fa/websocket.md)
+
 ## Endpoints
 
 | URL | Scope |
@@ -8,6 +10,8 @@
 | `/ws/chat/v1/conversations/{id}/` | A single conversation (closes with `4404` if you are not a member). |
 
 Frames are JSON text, at most 64 KB. Every frame has a `type`.
+
+The optional `?lang=fa` (or `en`) sets the language of this connection's error messages; without it the handshake's `Accept-Language`, then the server's `LANGUAGE_CODE`, is used. Error `code`s never change.
 
 ## Authentication
 

@@ -1,5 +1,7 @@
 # فصل ۸ — CSS، طراحی و ایزوله‌سازی استایل
 
+[English](en/08-css-and-design.md) · **فارسی**
+
 فایل‌های این فصل: `packages/react-chat/src/styles/{index,base}.css`، `apps/web/src/styles.css`، `packages/react-chat/test/styles.test.tsx`، [design-system.md](../design-system.md)، [ADR 0007](../architecture/decisions/0007-style-isolation.md)
 
 ## ۱. مسئله: کامپوننتی که در خانه‌ی دیگران زندگی می‌کند
