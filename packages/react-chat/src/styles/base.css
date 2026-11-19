@@ -1,0 +1,134 @@
+/* Tokens and the scoped reset. Imported BEFORE utilities so utilities win at equal specificity. */
+/* ---------------------------------------------------------------- tokens: light */
+.rc-root,
+.rc-tokens {
+  --rc-bg: #f9fafb;
+  --rc-sidebar: #f3f4f6;
+  --rc-surface: #ffffff;
+  --rc-surface-2: #eef0f4;
+  --rc-border: #e3e6ec;
+  --rc-text: #111827;
+  --rc-muted: #4b5563;
+  --rc-subtle: #6b7280;
+  --rc-primary: #4f46e5;
+  --rc-primary-fg: #ffffff;
+  --rc-primary-soft: rgb(79 70 229 / 0.1);
+  --rc-bubble-out: #4f46e5;
+  --rc-bubble-out-fg: #ffffff;
+  --rc-bubble-in: #ffffff;
+  --rc-bubble-in-fg: #111827;
+  --rc-danger: #dc2626;
+  --rc-success: #059669;
+  --rc-warning: #b45309;
+  --rc-overlay: rgb(17 24 39 / 0.45);
+  --rc-ring: rgb(79 70 229 / 0.55);
+  --rc-shadow: 0 1px 2px rgb(16 24 40 / 0.06), 0 8px 24px rgb(16 24 40 / 0.08);
+  --rc-radius: 10px;
+  --rc-radius-bubble: 16px;
+  --rc-font:
+    'Inter', 'Inter Variable', 'Vazirmatn', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif,
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji';
+  --rc-font-rtl: 'Vazirmatn', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  color-scheme: light;
+}
+
+/* ----------------------------------------------------------------- tokens: dark */
+.rc-root[data-rc-theme='dark'],
+.rc-tokens[data-rc-theme='dark'] {
+  --rc-bg: #0f1117;
+  --rc-sidebar: #151922;
+  --rc-surface: #1d2330;
+  --rc-surface-2: #252c3b;
+  --rc-border: #2b3342;
+  --rc-text: #f3f4f6;
+  --rc-muted: #9ca3af;
+  --rc-subtle: #7c8493;
+  --rc-primary: #818cf8;
+  --rc-primary-fg: #0f1117;
+  --rc-primary-soft: rgb(129 140 248 / 0.14);
+  --rc-bubble-out: #4a4fc4;
+  --rc-bubble-out-fg: #ffffff;
+  --rc-bubble-in: #1d2330;
+  --rc-bubble-in-fg: #f3f4f6;
+  --rc-danger: #f87171;
+  --rc-success: #34d399;
+  --rc-warning: #fbbf24;
+  --rc-overlay: rgb(0 0 0 / 0.6);
+  --rc-ring: rgb(129 140 248 / 0.6);
+  --rc-shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 12px 32px rgb(0 0 0 / 0.35);
+  color-scheme: dark;
+}
+
+/* --------------------------------------------------------- scoped minimal reset */
+.rc-root,
+.rc-root :where(*),
+.rc-root ::before,
+.rc-root ::after {
+  box-sizing: border-box;
+  border: 0 solid var(--rc-border);
+  margin: 0;
+  padding: 0;
+  /* Host rules such as `* { font-family }` or `p { line-height }` match our elements
+     directly and would beat inheritance; re-establish inheritance from .rc-root. */
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  text-align: inherit;
+}
+.rc-root {
+  font-family: var(--rc-font);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--rc-text);
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+  text-align: start;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+.rc-root :where(button, input, textarea, select) {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  letter-spacing: inherit;
+  text-transform: none;
+  border-radius: 0;
+  box-shadow: none;
+  appearance: none;
+  outline: none;
+}
+.rc-root :where(button, [role='button'], [role='menuitem'], label[for]) {
+  cursor: pointer;
+}
+.rc-root :where(button:disabled) {
+  cursor: not-allowed;
+}
+.rc-root :where(img, svg, video) {
+  display: block;
+  max-width: 100%;
+}
+.rc-root :where(a) {
+  color: inherit;
+  text-decoration: inherit;
+}
+.rc-root :where(ul, ol) {
+  list-style: none;
+}
+.rc-root :where(textarea) {
+  resize: none;
+}
+.rc-root :where(::placeholder) {
+  color: var(--rc-subtle);
+  opacity: 1;
+}
+.rc-root :where(:focus-visible) {
+  outline: 2px solid var(--rc-ring);
+  outline-offset: 2px;
+}
+.rc-root :where([dir='rtl']) {
+  font-family: var(--rc-font-rtl);
+}
