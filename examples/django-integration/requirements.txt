@@ -1,0 +1,3 @@
+# Installs the package from the monorepo; in a real project: django-realtime-chat[redis]
+-e ../../packages/django-chat
+daphne>=4.1

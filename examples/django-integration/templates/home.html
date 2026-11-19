@@ -1,0 +1,4 @@
+<!doctype html>
+<title>Acme CRM</title>
+<p>Signed in as {{ user.get_username }}. The React host app (examples/react-integration) embeds the chat widget on top of this session.</p>
+<form method="post" action="{% url 'logout' %}">{% csrf_token %}<button>Sign out</button></form>

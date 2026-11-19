@@ -1,0 +1,5 @@
+<!doctype html>
+<title>Acme CRM — sign in</title>
+<style>body{font-family:Georgia,serif;max-width:360px;margin:10vh auto}input,button{display:block;width:100%;margin:6px 0;padding:8px}</style>
+<h1>Acme CRM</h1>
+<form method="post">{% csrf_token %}{{ form.as_p }}<button type="submit">Sign in</button></form>
