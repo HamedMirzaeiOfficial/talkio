@@ -47,6 +47,13 @@ atlassian-ide-plugin.xml
 # Python # 
 *.py[cod] 
 *$py.class 
+__pycache__/ 
+
+# Local/runtime data
+*.sqlite3
+media/
+staticfiles/
+.DS_Store
 
 # Distribution / packaging 
 .Python build/ 
