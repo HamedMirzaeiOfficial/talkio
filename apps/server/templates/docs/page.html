@@ -1,0 +1,227 @@
+{% load static %}<!doctype html>
+<html lang="{% if rtl %}fa{% else %}en{% endif %}" dir="{% if rtl %}rtl{% else %}ltr{% endif %}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title|striptags }} · Talkio docs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Vazirmatn:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" id="hljs-light" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+<link rel="stylesheet" id="hljs-dark" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" disabled>
+<script>
+  // Apply the saved theme before first paint.
+  try {
+    var t = localStorage.getItem('talkio:docs-theme');
+    var dark = t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  } catch (e) {}
+</script>
+<style>
+  :root {
+    --bg: #ffffff; --sidebar: #f7f8fa; --surface: #ffffff; --surface-2: #f1f3f7; --border: #e3e6ec;
+    --text: #111827; --muted: #4b5563; --subtle: #6b7280; --primary: #4f46e5; --primary-soft: rgb(79 70 229 / .08);
+    --code-bg: #f6f8fa; --shadow: 0 1px 2px rgb(16 24 40 / .05);
+    --font: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-fa: 'Vazirmatn', 'Inter', ui-sans-serif, system-ui, sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color-scheme: light;
+  }
+  [data-theme='dark'] {
+    --bg: #0f1117; --sidebar: #131720; --surface: #161b25; --surface-2: #1d2330; --border: #2b3342;
+    --text: #e8eaee; --muted: #a3aab8; --subtle: #7c8493; --primary: #818cf8; --primary-soft: rgb(129 140 248 / .12);
+    --code-bg: #0d1117; --shadow: none; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: 76px; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15.5px/1.7 var(--font); -webkit-font-smoothing: antialiased; }
+  [dir='rtl'] body { font-family: var(--font-fa); font-size: 16px; line-height: 1.95; }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* top bar */
+  .topbar { position: sticky; top: 0; z-index: 20; height: 56px; display: flex; align-items: center; gap: 14px; padding: 0 20px;
+            background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); }
+  .brand { display: flex; align-items: center; gap: 10px; color: var(--text); font-weight: 600; letter-spacing: -.01em; }
+  .brand:hover { text-decoration: none; }
+  .brand svg { width: 28px; height: 28px; }
+  .brand small { color: var(--subtle); font-weight: 500; }
+  .spacer { flex: 1; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border: 1px solid var(--border); border-radius: 9px;
+         background: var(--surface); color: var(--text); font: 500 13px var(--font); cursor: pointer; }
+  .btn:hover { background: var(--surface-2); text-decoration: none; }
+  .menu-toggle { display: none; }
+
+  /* layout */
+  .layout { display: grid; grid-template-columns: 280px minmax(0, 1fr) 240px; max-width: 1480px; margin: 0 auto; }
+  nav.sidebar { position: sticky; top: 56px; height: calc(100vh - 56px); overflow-y: auto; padding: 22px 14px 40px; border-inline-end: 1px solid var(--border);
+                background: var(--sidebar); direction: ltr; text-align: left; font-family: var(--font); }
+  nav.sidebar h4 { margin: 18px 10px 6px; font: 600 11.5px var(--font); letter-spacing: .06em; text-transform: uppercase; color: var(--subtle); }
+  nav.sidebar h4.fa { font-family: var(--font-fa); text-transform: none; letter-spacing: 0; font-size: 13px; direction: rtl; text-align: right; }
+  nav.sidebar a { display: block; padding: 6px 10px; border-radius: 8px; color: var(--muted); font-size: 14px; line-height: 1.4; }
+  nav.sidebar a.fa { font-family: var(--font-fa); direction: rtl; text-align: right; }
+  nav.sidebar a:hover { background: var(--surface-2); color: var(--text); text-decoration: none; }
+  nav.sidebar a.active { background: var(--primary-soft); color: var(--primary); font-weight: 600; }
+  main { min-width: 0; padding: 36px 48px 96px; }
+  article { max-width: 860px; margin: 0 auto; }
+  aside.toc { position: sticky; top: 56px; height: calc(100vh - 56px); overflow-y: auto; padding: 32px 18px; font-size: 13px; }
+  aside.toc h5 { margin: 0 0 8px; font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--subtle); }
+  [dir='rtl'] aside.toc h5 { text-transform: none; letter-spacing: 0; font-size: 13px; }
+  aside.toc ul { list-style: none; margin: 0; padding: 0; }
+  aside.toc ul ul { padding-inline-start: 12px; }
+  aside.toc a { display: block; padding: 3px 0; color: var(--muted); line-height: 1.45; }
+  aside.toc a:hover, aside.toc a.on { color: var(--primary); text-decoration: none; }
+
+  /* content typography */
+  article h1 { font-size: 2.1em; line-height: 1.2; letter-spacing: -.02em; margin: 0 0 .6em; }
+  article h2 { font-size: 1.5em; line-height: 1.3; margin: 2.2em 0 .7em; padding-bottom: .35em; border-bottom: 1px solid var(--border); letter-spacing: -.01em; }
+  article h3 { font-size: 1.2em; margin: 1.8em 0 .5em; }
+  article h4 { font-size: 1.05em; margin: 1.5em 0 .4em; }
+  article h1, article h2, article h3 { scroll-margin-top: 76px; }
+  [dir='rtl'] article h1, [dir='rtl'] article h2, [dir='rtl'] article h3 { letter-spacing: 0; }
+  .headerlink { margin-inline-start: .4em; opacity: 0; color: var(--subtle); font-weight: 400; }
+  h2:hover .headerlink, h3:hover .headerlink { opacity: 1; }
+  article p, article li { color: var(--text); }
+  article blockquote { margin: 1.2em 0; padding: .7em 1.1em; border-inline-start: 3px solid var(--primary); background: var(--primary-soft); border-radius: 8px; color: var(--muted); }
+  article blockquote p { margin: .3em 0; }
+  article hr { border: 0; border-top: 1px solid var(--border); margin: 2.4em 0; }
+  article img { max-width: 100%; height: auto; border-radius: 10px; }
+  article table img { border: 1px solid var(--border); }
+  article kbd { font: 600 12px var(--mono); padding: 2px 6px; border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 6px; background: var(--surface-2); }
+
+  /* code */
+  article code { font: .86em var(--mono); background: var(--surface-2); padding: .15em .4em; border-radius: 6px; direction: ltr; unicode-bidi: isolate; }
+  article pre { position: relative; margin: 1.2em 0; padding: 16px 18px; background: var(--code-bg); border: 1px solid var(--border); border-radius: 12px;
+                overflow-x: auto; direction: ltr; text-align: left; line-height: 1.6; }
+  article pre code { background: none; padding: 0; font-size: 13.2px; }
+  article pre code.hljs { background: none; padding: 0; }
+  .copy { position: absolute; top: 8px; right: 8px; opacity: 0; transition: opacity .15s; font: 500 12px var(--font); padding: 4px 8px; border-radius: 6px;
+          border: 1px solid var(--border); background: var(--surface); color: var(--muted); cursor: pointer; }
+  pre:hover .copy { opacity: 1; }
+  pre.mermaid { background: var(--surface); text-align: center; }
+
+  /* tables */
+  .table-wrap { overflow-x: auto; margin: 1.2em 0; border: 1px solid var(--border); border-radius: 12px; }
+  article table { width: 100%; border-collapse: collapse; font-size: .93em; }
+  article th, article td { padding: 9px 13px; border-bottom: 1px solid var(--border); text-align: start; vertical-align: top; }
+  article th { background: var(--surface-2); font-weight: 600; white-space: nowrap; }
+  article tr:last-child td { border-bottom: 0; }
+  article table[align], article td[align='center'] { text-align: center; }
+
+  .pager { display: flex; justify-content: space-between; gap: 12px; margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border); }
+  .pager a { flex: 1; padding: 12px 16px; border: 1px solid var(--border); border-radius: 12px; color: var(--text); }
+  .pager a:hover { border-color: var(--primary); text-decoration: none; }
+  .pager small { display: block; color: var(--subtle); font-size: 12px; }
+  .pager .next { text-align: end; }
+
+  @media (max-width: 1180px) { .layout { grid-template-columns: 260px minmax(0, 1fr); } aside.toc { display: none; } }
+  @media (max-width: 820px) {
+    .layout { display: block; }
+    .menu-toggle { display: inline-flex; }
+    nav.sidebar { display: none; position: fixed; inset: 56px 0 0 0; z-index: 15; height: auto; }
+    body.nav-open nav.sidebar { display: block; }
+    main { padding: 24px 18px 80px; }
+  }
+  @media print { .topbar, nav.sidebar, aside.toc, .pager, .copy { display: none !important; } .layout { display: block; } }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <button class="btn menu-toggle" type="button" aria-label="Menu" onclick="document.body.classList.toggle('nav-open')">☰</button>
+  <a class="brand" href="{{ docs_base }}">
+    <svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="t" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#6D6BF5"/><stop offset="1" stop-color="#4338CA"/></linearGradient></defs><rect width="64" height="64" rx="18" fill="url(#t)"/><path fill="#fff" d="M14 27.5C14 19.5 20.5 13 28.5 13h7C43.5 13 50 19.5 50 27.5S43.5 42 35.5 42H28l-8.2 6.6c-1.3 1-3.1.1-3.1-1.5v-7.4A14.4 14.4 0 0 1 14 27.5Z"/><g fill="#4F46E5"><rect x="22.5" y="24" width="4" height="7" rx="2"/><rect x="29.5" y="19.5" width="4" height="16" rx="2"/><rect x="36.5" y="22.5" width="4" height="10" rx="2"/></g><circle cx="50" cy="14" r="6.5" fill="#34D399" stroke="url(#t)" stroke-width="3.5"/></svg>
+    Talkio <small>Documentation</small>
+  </a>
+  <span class="spacer"></span>
+  <button class="btn" type="button" id="theme" aria-label="Toggle light and dark theme">Theme</button>
+  <a class="btn" href="{{ admin_url }}">Admin</a>
+</header>
+<div class="layout">
+  <nav class="sidebar" aria-label="Documentation">
+    {% for name, items, fa in groups %}
+      <h4{% if fa %} class="fa"{% endif %}>{{ name }}</h4>
+      {% for item in items %}
+        <a href="{{ docs_base }}{{ item.path }}" class="{% if fa %}fa {% endif %}{% if item.path == current %}active{% endif %}"{% if item.path == current %} aria-current="page"{% endif %}>{{ item.title|striptags }}</a>
+      {% endfor %}
+    {% endfor %}
+  </nav>
+  <main>
+    <article id="content">{{ body|safe }}</article>
+    <div class="pager" id="pager"></div>
+  </main>
+  <aside class="toc" aria-label="{% if rtl %}در این صفحه{% else %}On this page{% endif %}">
+    {% if toc %}<h5>{% if rtl %}در این صفحه{% else %}On this page{% endif %}</h5>{{ toc|safe }}{% endif %}
+  </aside>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script type="module">
+  const root = document.documentElement;
+  const sheets = () => {
+    const dark = root.dataset.theme === 'dark';
+    document.getElementById('hljs-dark').disabled = !dark;
+    document.getElementById('hljs-light').disabled = dark;
+    return dark;
+  };
+  let dark = sheets();
+  document.getElementById('theme').addEventListener('click', () => {
+    root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+    try { localStorage.setItem('talkio:docs-theme', root.dataset.theme); } catch (e) {}
+    dark = sheets();
+    renderMermaid();
+  });
+
+  // Tables scroll horizontally on small screens.
+  for (const table of document.querySelectorAll('#content table')) {
+    if (table.closest('.table-wrap') || table.querySelector('img')) continue;
+    const wrap = document.createElement('div');
+    wrap.className = 'table-wrap';
+    table.replaceWith(wrap);
+    wrap.append(table);
+  }
+
+  // Syntax highlighting + copy buttons.
+  for (const block of document.querySelectorAll('#content pre:not(.mermaid) > code')) {
+    if (window.hljs) window.hljs.highlightElement(block);
+    const button = document.createElement('button');
+    button.className = 'copy';
+    button.type = 'button';
+    button.textContent = 'Copy';
+    button.onclick = async () => {
+      try { await navigator.clipboard.writeText(block.innerText); button.textContent = 'Copied'; } catch (e) { button.textContent = 'Select & copy'; }
+      setTimeout(() => (button.textContent = 'Copy'), 1500);
+    };
+    block.parentElement.append(button);
+  }
+
+  // Mermaid diagrams (loaded only when the page has one).
+  const diagrams = [...document.querySelectorAll('pre.mermaid')];
+  diagrams.forEach((d) => (d.dataset.source = d.textContent));
+  async function renderMermaid() {
+    if (!diagrams.length) return;
+    const { default: mermaid } = await import('https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.esm.min.mjs');
+    diagrams.forEach((d) => { d.removeAttribute('data-processed'); d.textContent = d.dataset.source; });
+    mermaid.initialize({ startOnLoad: false, theme: dark ? 'dark' : 'neutral', securityLevel: 'strict', fontFamily: 'Inter, sans-serif' });
+    await mermaid.run({ nodes: diagrams });
+  }
+  renderMermaid().catch(() => {});
+
+  // Highlight the current section in the table of contents.
+  const links = new Map([...document.querySelectorAll('aside.toc a')].map((a) => [decodeURIComponent(a.hash.slice(1)), a]));
+  const observer = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) {
+      links.forEach((a) => a.classList.remove('on'));
+      links.get(e.target.id)?.classList.add('on');
+    }
+  }, { rootMargin: '-70px 0px -70% 0px' });
+  document.querySelectorAll('#content h2[id], #content h3[id]').forEach((h) => observer.observe(h));
+
+  // Previous / next page in sidebar order.
+  const nav = [...document.querySelectorAll('nav.sidebar a')];
+  const at = nav.findIndex((a) => a.classList.contains('active'));
+  const pager = document.getElementById('pager');
+  const add = (a, cls, label) => { if (!a) return; const l = document.createElement('a'); l.href = a.href; l.className = cls; l.innerHTML = `<small>${label}</small>`; l.append(a.textContent); pager.append(l); };
+  add(nav[at - 1], 'prev', document.dir === 'rtl' ? 'قبلی' : 'Previous');
+  add(nav[at + 1], 'next', document.dir === 'rtl' ? 'بعدی' : 'Next');
+  document.querySelector('nav.sidebar a.active')?.scrollIntoView({ block: 'center' });
+</script>
+</body>
+</html>
