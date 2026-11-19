@@ -1,0 +1,34 @@
+{
+  "name": "@realtime-chat/client",
+  "version": "0.1.0",
+  "description": "Framework-independent TypeScript SDK for django-realtime-chat: typed REST client, resilient WebSocket manager and a reactive message store.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "chat",
+    "websocket",
+    "django",
+    "realtime",
+    "sdk"
+  ]
+}
