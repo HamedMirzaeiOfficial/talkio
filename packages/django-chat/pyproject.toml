@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "django-realtime-chat"
+version = "0.1.0"
+description = "Reusable real-time messaging for Django: conversations, groups, receipts, presence, attachments over DRF and Channels."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Hamed Mirzaei" }]
+keywords = ["django", "chat", "channels", "websocket", "messaging", "realtime"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Framework :: Django",
+  "Framework :: Django :: 4.2",
+  "Framework :: Django :: 5.2",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Communications :: Chat",
+]
+dependencies = [
+  "Django>=4.2,<6.0",
+  "djangorestframework>=3.14,<4.0",
+  "channels>=4.0,<5.0",
+]
+
+[project.optional-dependencies]
+redis = ["channels-redis>=4.1", "redis>=5.0"]
+images = ["Pillow>=10.0"]
+test = ["pytest>=8", "pytest-django>=4.8", "pytest-asyncio>=0.23", "Pillow>=10.0", "daphne>=4.0", "fakeredis>=2.20"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+django_realtime_chat = ["py.typed"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "tests.settings"
+pythonpath = [".", "src"]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+filterwarnings = ["ignore::DeprecationWarning:daphne.*"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "DJ", "S"]
+ignore = ["S101", "S105", "S106", "DJ001"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S", "B"]
+"src/django_realtime_chat/migrations/*" = ["E501", "I"]
